@@ -8,24 +8,32 @@ export type UserRole = 'admin' | 'operativo';
 export interface AuthUser {
   username: string;
   role: UserRole;
+  sessionVersion?: string;
 }
 
 interface InternalUser extends AuthUser {
+  loginId: string;
   password: string;
 }
 
 export const AUTH_SESSION_KEY = 'pbm-control-active-user';
+const AUTH_SESSION_VERSION = '2026-06-security-refresh';
 
 export const INTERNAL_USERS: InternalUser[] = [
-  { username: 'Anibal', password: 'PBM-Anibal-2026', role: 'admin' },
-  { username: 'Ruth', password: 'PBM-Ruth-2026', role: 'admin' },
-  { username: 'Karen', password: 'PBM-Karen-2026', role: 'admin' },
-  { username: 'William', password: 'PBM-William-2026', role: 'operativo' },
-  { username: 'Francisco', password: 'PBM-Francisco-2026', role: 'operativo' }
+  { loginId: 'An7#bL2!qR', username: 'Anibal', password: 'P9&mK2@zQ!', role: 'admin' },
+  { loginId: 'Ru4@tH8#xL', username: 'Ruth', password: 'B7!rV3$qN@', role: 'admin' },
+  { loginId: 'Ka6#rN1!pZ', username: 'Karen', password: 'M4@kT8#sL!', role: 'admin' },
+  { loginId: 'Wi9!lM5@cQ', username: 'William', password: 'X2#wP7!nR@', role: 'operativo' },
+  { loginId: 'Fr3@cS6!vT', username: 'Francisco', password: 'L8$qF1@zM#', role: 'operativo' }
 ];
 
 function publicUser(user: InternalUser): AuthUser {
-  return { username: user.username, role: user.role };
+  return { username: user.username, role: user.role, sessionVersion: AUTH_SESSION_VERSION };
+}
+
+export function getUserDisplayName(user: AuthUser | null | undefined): string {
+  if (!user) return '';
+  return user.username;
 }
 
 export function getCurrentUser(): AuthUser | null {
@@ -33,7 +41,9 @@ export function getCurrentUser(): AuthUser | null {
     const raw = sessionStorage.getItem(AUTH_SESSION_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as AuthUser;
-    const exists = INTERNAL_USERS.some((user) => user.username === parsed.username && user.role === parsed.role);
+    const exists = INTERNAL_USERS.some(
+      (user) => user.username === parsed.username && user.role === parsed.role && parsed.sessionVersion === AUTH_SESSION_VERSION
+    );
     return exists ? parsed : null;
   } catch {
     return null;
@@ -71,7 +81,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     user,
     login(username, password) {
       const candidate = INTERNAL_USERS.find(
-        (item) => item.username.toLowerCase() === username.trim().toLowerCase() && item.password === password
+        (item) => item.loginId.toLowerCase() === username.trim().toLowerCase() && item.password === password
       );
       if (!candidate) return false;
       const nextUser = publicUser(candidate);
@@ -136,7 +146,7 @@ export function LoginScreen() {
                     setError('');
                   }}
                   className={inputClassName}
-                  placeholder="Ej. Anibal"
+                  placeholder="Solicita tus accesos al administrador"
                   autoComplete="username"
                   autoFocus
                   required
@@ -188,18 +198,19 @@ export function RequireAuth({ children }: { children: ReactNode }) {
 export function UserSessionBadge({ compact = false }: { compact?: boolean }) {
   const { user, logout } = useAuth();
   if (!user) return null;
+  const displayName = getUserDisplayName(user);
 
   return (
     <div className={compact ? 'flex min-w-0 items-center gap-1.5' : 'flex items-center gap-2'}>
       {!compact ? (
         <div className="hidden min-[390px]:block text-right">
           <p className="text-[0.62rem] font-black uppercase tracking-[0.12em] text-pbm-muted">{user.role}</p>
-          <p className="max-w-24 truncate text-xs font-black text-pbm-text">{user.username}</p>
+          <p className="max-w-24 truncate text-xs font-black text-pbm-text">{displayName}</p>
         </div>
       ) : null}
       <div className={compact ? 'sync-indicator flex max-w-[5.3rem] items-center gap-1 rounded-lg px-1.5 py-1.5 text-pbm-glow' : 'sync-indicator hidden items-center gap-1.5 rounded-lg px-2 py-1.5 text-pbm-glow min-[360px]:flex'}>
         <UserRound size={compact ? 12 : 14} aria-hidden="true" />
-        <span className={compact ? 'truncate text-[0.62rem] font-black' : 'text-[0.68rem] font-black'}>{user.username}</span>
+        <span className={compact ? 'truncate text-[0.62rem] font-black' : 'text-[0.68rem] font-black'}>{displayName}</span>
       </div>
       <button
         type="button"

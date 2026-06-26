@@ -356,11 +356,13 @@ PBM Control Almacen usa login interno basico en frontend. La sesion vive en `ses
 
 Usuarios incluidos:
 
-- `Anibal` / `PBM-Anibal-2026` / rol `admin`
-- `Ruth` / `PBM-Ruth-2026` / rol `admin`
-- `Karen` / `PBM-Karen-2026` / rol `admin`
-- `William` / `PBM-William-2026` / rol `operativo`
-- `Francisco` / `PBM-Francisco-2026` / rol `operativo`
+- Anibal: rol `admin`
+- Ruth: rol `admin`
+- Karen: rol `admin`
+- William: rol `operativo`
+- Francisco: rol `operativo`
+
+Las credenciales no se documentan en este README. Solicita tus accesos al administrador.
 
 Permisos `admin`:
 

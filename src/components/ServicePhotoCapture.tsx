@@ -22,7 +22,12 @@ export function ServicePhotoCapture({
   photos: ServicePhotoDraftMap;
   onChange: (photos: ServicePhotoDraftMap) => void;
 }) {
-  const inputRefs = useRef<Record<ServicePhotoKind, HTMLInputElement | null>>({
+  const cameraInputRefs = useRef<Record<ServicePhotoKind, HTMLInputElement | null>>({
+    antes: null,
+    despues: null,
+    evidencia: null
+  });
+  const galleryInputRefs = useRef<Record<ServicePhotoKind, HTMLInputElement | null>>({
     antes: null,
     despues: null,
     evidencia: null
@@ -41,8 +46,10 @@ export function ServicePhotoCapture({
       setError(nextError instanceof Error ? nextError.message : 'No se pudo procesar la foto.');
     } finally {
       setLoadingKind(null);
-      const input = inputRefs.current[kind];
-      if (input) input.value = '';
+      const cameraInput = cameraInputRefs.current[kind];
+      const galleryInput = galleryInputRefs.current[kind];
+      if (cameraInput) cameraInput.value = '';
+      if (galleryInput) galleryInput.value = '';
     }
   }
 
@@ -79,10 +86,11 @@ export function ServicePhotoCapture({
                   <button
                     type="button"
                     onClick={() => removePhoto(kind)}
-                    className="pressable rounded-lg border border-pbm-red/40 bg-pbm-red/10 p-2 text-pbm-red"
+                    className="pressable inline-flex items-center gap-1.5 rounded-lg border border-pbm-red/40 bg-pbm-red/10 px-2 py-2 text-xs font-black text-pbm-red"
                     aria-label={`Eliminar ${SERVICE_PHOTO_LABELS[kind]}`}
                   >
                     <Trash2 size={16} aria-hidden="true" />
+                    Quitar
                   </button>
                 ) : null}
               </div>
@@ -99,7 +107,7 @@ export function ServicePhotoCapture({
 
               <input
                 ref={(node) => {
-                  inputRefs.current[kind] = node;
+                  cameraInputRefs.current[kind] = node;
                 }}
                 type="file"
                 accept="image/*"
@@ -107,15 +115,35 @@ export function ServicePhotoCapture({
                 className="sr-only"
                 onChange={(event) => void handleFile(kind, event.target.files?.[0])}
               />
-              <button
-                type="button"
-                disabled={isLoading}
-                onClick={() => inputRefs.current[kind]?.click()}
-                className="pressable mt-3 inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-lg border border-pbm-blue/40 bg-pbm-blue/10 px-3 text-sm font-black text-pbm-glow disabled:opacity-60"
-              >
-                {isLoading ? <Loader2 className="animate-spin" size={16} aria-hidden="true" /> : <Camera size={16} aria-hidden="true" />}
-                {photo ? 'Cambiar foto' : 'Tomar o seleccionar foto'}
-              </button>
+              <input
+                ref={(node) => {
+                  galleryInputRefs.current[kind] = node;
+                }}
+                type="file"
+                accept="image/*"
+                className="sr-only"
+                onChange={(event) => void handleFile(kind, event.target.files?.[0])}
+              />
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  disabled={isLoading}
+                  onClick={() => cameraInputRefs.current[kind]?.click()}
+                  className="pressable inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-pbm-blue/40 bg-pbm-blue/10 px-3 text-sm font-black text-pbm-glow disabled:opacity-60"
+                >
+                  {isLoading ? <Loader2 className="animate-spin" size={16} aria-hidden="true" /> : <Camera size={16} aria-hidden="true" />}
+                  Camara
+                </button>
+                <button
+                  type="button"
+                  disabled={isLoading}
+                  onClick={() => galleryInputRefs.current[kind]?.click()}
+                  className="pressable inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-pbm-border bg-pbm-card/80 px-3 text-sm font-black text-pbm-text disabled:opacity-60"
+                >
+                  {isLoading ? <Loader2 className="animate-spin" size={16} aria-hidden="true" /> : <ImagePlus size={16} aria-hidden="true" />}
+                  Galeria
+                </button>
+              </div>
             </div>
           );
         })}

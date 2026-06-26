@@ -150,9 +150,33 @@ export default function Servicios() {
   }
 
   return (
-    <div className="screen-fade space-y-4">
+    <div className="screen-fade space-y-5">
+      <section className="hero-panel rounded-2xl p-5 lg:p-6">
+        <div className="relative z-10 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.2em] text-pbm-glow">Agenda operativa</p>
+            <h2 className="mt-2 text-3xl font-black text-pbm-text lg:text-5xl">Servicios</h2>
+            <p className="mt-2 max-w-2xl text-sm text-pbm-muted">Calendario, pendientes activos y cierres realizados sin estado vencido.</p>
+          </div>
+          <div className="grid grid-cols-3 gap-2 text-center lg:w-[26rem]">
+            <div className="rounded-xl border border-pbm-yellow/30 bg-pbm-yellow/10 p-3">
+              <p className="text-2xl font-black text-pbm-yellow">{servicios.filter((servicio) => getServiceStatus(servicio) === 'Pendiente').length}</p>
+              <p className="text-[0.62rem] text-pbm-muted">Pendientes</p>
+            </div>
+            <div className="rounded-xl border border-pbm-blue/30 bg-pbm-blue/10 p-3">
+              <p className="text-2xl font-black text-pbm-glow">{servicios.filter((servicio) => getServiceStatus(servicio) === 'Sin programar').length}</p>
+              <p className="text-[0.62rem] text-pbm-muted">Sin fecha</p>
+            </div>
+            <div className="rounded-xl border border-pbm-green/30 bg-pbm-green/10 p-3">
+              <p className="text-2xl font-black text-pbm-green">{monthRealizados.length}</p>
+              <p className="text-[0.62rem] text-pbm-muted">Mes</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {reminders.length > 0 ? (
-        <section className="premium-card rounded-lg p-4" data-accent={todayReminders.length > 0 ? 'orange' : 'yellow'}>
+        <section className="premium-card rounded-2xl p-4" data-accent={todayReminders.length > 0 ? 'orange' : 'yellow'}>
           <p className="text-xs font-black uppercase tracking-[0.16em] text-pbm-muted">Recordatorios activos</p>
           <h2 className="mt-1 text-xl font-black text-pbm-text">
             {todayReminders.length > 0 ? `${todayReminders.length} servicio(s) hoy` : `${tomorrowReminders.length} servicio(s) manana`}
@@ -161,7 +185,7 @@ export default function Servicios() {
         </section>
       ) : null}
 
-      <div className="panel-card grid grid-cols-2 gap-2 rounded-lg p-1">
+      <div className="panel-card grid grid-cols-2 gap-2 rounded-2xl p-1">
         {(['Lista', 'Calendario'] as ViewMode[]).map((item) => (
           <button
             key={item}
@@ -175,8 +199,8 @@ export default function Servicios() {
       </div>
 
       {viewMode === 'Calendario' ? (
-        <section className="space-y-4">
-          <div className="panel-card rounded-lg p-4 shadow-glow">
+        <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_24rem] xl:items-start">
+          <div className="panel-card rounded-2xl p-4 shadow-glow">
             <div className="flex items-center justify-between gap-3">
               <button type="button" className="pressable rounded-lg border border-pbm-border bg-pbm-panel/80 p-2 text-pbm-text" onClick={() => setMonthCursor((current) => new Date(current.getFullYear(), current.getMonth() - 1, 1))} aria-label="Mes anterior">
                 <ChevronLeft size={18} aria-hidden="true" />
@@ -232,7 +256,7 @@ export default function Servicios() {
             </div>
           </div>
 
-          <div key={selectedDateKey} className="screen-fade space-y-3">
+          <div key={selectedDateKey} className="screen-fade space-y-3 xl:sticky xl:top-28">
             <h3 className="text-sm font-black uppercase tracking-[0.14em] text-pbm-muted">Servicios del dia {formatDate(selectedDateKey)}</h3>
             {selectedDayEntries.length === 0 ? <EmptyState label="No hay servicios programados o realizados para este dia." /> : null}
             {selectedDayEntries.map((entry) => {
@@ -292,7 +316,7 @@ export default function Servicios() {
 
           {servicios.length === 0 ? <EmptyState label="No hay servicios para este filtro." /> : null}
 
-          <section className="space-y-3">
+          <section className="grid gap-3 xl:grid-cols-2">
             {servicios.map((servicio) => {
               const status = getServiceStatus(servicio);
               return (

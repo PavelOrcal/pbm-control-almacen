@@ -43,7 +43,21 @@ export default function StockProductos() {
   if (error || !data) return <ErrorState message={error instanceof Error ? error.message : 'Error desconocido'} />;
 
   return (
-    <div className="screen-fade space-y-4">
+    <div className="screen-fade space-y-5">
+      <section className="hero-panel rounded-2xl p-5 lg:p-6">
+        <div className="relative z-10 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.2em] text-pbm-glow">Inventario sensible</p>
+            <h2 className="mt-2 text-3xl font-black text-pbm-text lg:text-5xl">Stock productos</h2>
+            <p className="mt-2 max-w-2xl text-sm text-pbm-muted">Niveles de producto con lectura visual, minimo operativo y estado critico.</p>
+          </div>
+          <div className="rounded-xl border border-pbm-blue/30 bg-pbm-bg/65 p-4 text-right">
+            <p className="text-xs font-black uppercase tracking-[0.14em] text-pbm-muted">Productos activos</p>
+            <p className="mt-1 text-3xl font-black text-pbm-text">{data.productos.filter((producto) => producto.activo === 'SI').length}</p>
+          </div>
+        </div>
+      </section>
+
       <Link
         to="/movimiento-producto"
         className="quick-action pressable flex min-h-14 items-center justify-center gap-2 rounded-lg px-4 text-sm font-black text-pbm-text"
@@ -52,7 +66,7 @@ export default function StockProductos() {
         Registrar movimiento producto
       </Link>
 
-      <section className="space-y-3">
+      <section className="section-grid">
         {data.productos.map((producto) => {
           const status = productStockStatus(producto);
           const visual = productVisual(producto.producto);

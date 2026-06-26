@@ -1020,3 +1020,87 @@ Pendientes fuera de esta version:
 - Envio avanzado desde Firebase Cloud Functions si se quiere mover todo a Firebase.
 - Consola administrativa mas amplia para reintentar o limpiar logs.
 - Segmentacion por multiples responsables por servicio.
+
+## V2.8 Frontend Premium Responsive
+
+La version V2.8 rediseña el frontend sin cambiar contratos de API, Google Sheet, Apps Script, Firebase Push, offline queue, roles, stock, historial ni servicios.
+
+Objetivo visual:
+
+- PWA empresarial premium.
+- Estetica industrial oscura con navy, azul liquido y glassmorphism.
+- Mobile-first como app nativa.
+- Desktop con sidebar, topbar y grids amplios.
+- Animaciones sobrias y compatibles con `prefers-reduced-motion`.
+
+Cambios principales:
+
+- AppShell responsive nuevo con `DesktopSidebar` en escritorio y `BottomNav` solo en movil.
+- Topbar premium con estado visual, acceso de notificaciones y espacio para busqueda global futura.
+- Splash screen premium con logo, engrane, halo azul y fade out.
+- Dashboard reorganizado como centro de mando ejecutivo con hero, metricas animadas, alertas compactas, sync y push.
+- Clientes redisenado con hero, buscador premium, metricas y grid responsive.
+- Maquinas redisenado con hero, buscador y fichas visuales en grid desktop.
+- Servicios y Calendario redisenados con hero, tabs premium y layout de dos columnas en desktop.
+- Stock Productos y Stock Bodega redisenados con encabezados ejecutivos y grids visuales.
+- Alertas redisenadas con filtros sticky, resumen y grid ejecutivo.
+- Mas/configuracion redisenado con perfil, push, backend push y accesos administrativos.
+
+Componentes agregados:
+
+- `src/components/CountUp.tsx`
+- `src/components/PremiumSplash.tsx`
+- `src/components/DesktopSidebar.tsx`
+
+Componentes modificados:
+
+- `src/components/Layout.tsx`
+- `src/components/BottomNav.tsx`
+- `src/components/StatCard.tsx`
+- `src/styles/globals.css`
+
+Paginas modificadas:
+
+- `src/pages/Dashboard.tsx`
+- `src/pages/Clientes.tsx`
+- `src/pages/Maquinas.tsx`
+- `src/pages/Servicios.tsx`
+- `src/pages/StockProductos.tsx`
+- `src/pages/StockBodega.tsx`
+- `src/pages/Alertas.tsx`
+- `src/pages/Mas.tsx`
+
+Animaciones:
+
+- Splash de entrada/salida.
+- Engrane con rotacion suave.
+- Halo/linea azul de carga.
+- Entrada de tarjetas.
+- Count-up en metricas.
+- Hover desktop con elevacion ligera.
+- Press/tap en tarjetas y botones.
+- Barras de stock con movimiento suave.
+- Shimmer en skeletons existentes.
+
+Librerias:
+
+- No se agregaron dependencias nuevas.
+- Se mantuvo `lucide-react`.
+- Las animaciones se implementaron con CSS y React ligero.
+
+Verificacion V2.8:
+
+- `npm run build` pasa.
+- `npm run preview` corre.
+- Responsive probado en 360, 375, 390, 412, 430 y desktop 1440.
+- Sin scroll horizontal detectado.
+- Sidebar visible en desktop y oculta en movil.
+- Bottom nav visible en movil y oculta en desktop.
+- Sin errores graves de consola en las pruebas automatizadas.
+
+Pendientes sugeridos:
+
+- V2.8.1 pulido fino de animaciones por pagina.
+- V2.8.2 reportes premium con graficas reales.
+- V2.8.3 onboarding de instalacion PWA.
+- V2.8.4 refinamiento visual final con pruebas en dispositivos fisicos.

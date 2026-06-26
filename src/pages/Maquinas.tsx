@@ -1,4 +1,4 @@
-import { LockKeyhole, Search } from 'lucide-react';
+import { Factory, LockKeyhole, Search } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { inputClassName } from '../components/FormControls';
@@ -36,18 +36,35 @@ export default function Maquinas() {
   if (error || !data) return <ErrorState message={error instanceof Error ? error.message : 'Error desconocido'} />;
 
   return (
-    <div className="screen-fade space-y-4">
-      <div className="relative">
-        <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-pbm-muted" size={18} aria-hidden="true" />
-        <input
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-          className={`${inputClassName} pl-10`}
-          placeholder="Buscar maquina"
-        />
-      </div>
+    <div className="screen-fade space-y-5">
+      <section className="hero-panel rounded-2xl p-5 lg:p-6">
+        <div className="relative z-10 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.2em] text-pbm-glow">Equipos instalados</p>
+            <h2 className="mt-2 text-3xl font-black text-pbm-text lg:text-5xl">Maquinas</h2>
+            <p className="mt-2 max-w-2xl text-sm text-pbm-muted">Fichas tecnicas, imagen real, cliente, prioridad y estado operativo.</p>
+          </div>
+          <div className="rounded-xl border border-pbm-blue/30 bg-pbm-bg/65 p-4 text-right">
+            <Factory className="ml-auto text-pbm-glow" size={22} aria-hidden="true" />
+            <p className="mt-2 text-3xl font-black text-pbm-text">{maquinas.length}</p>
+            <p className="text-[0.65rem] text-pbm-muted">Equipos visibles</p>
+          </div>
+        </div>
+      </section>
+
+      <section className="panel-card rounded-2xl p-3 lg:p-4">
+        <div className="relative">
+          <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-pbm-muted" size={18} aria-hidden="true" />
+          <input
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            className={`${inputClassName} pl-10`}
+            placeholder="Buscar maquina, cliente, modelo o ubicacion"
+          />
+        </div>
+      </section>
       {maquinas.length === 0 ? <EmptyState label="No hay maquinas para este filtro." /> : null}
-      <section className="space-y-3">
+      <section className="grid gap-4 lg:grid-cols-2 2xl:grid-cols-3">
         {maquinas.map((maquina) => (
           <article
             key={maquina.idMaquina}

@@ -21,7 +21,7 @@ export function BottomNav() {
   });
 
   return (
-    <nav className="bottom-nav-shell fixed inset-x-0 bottom-0 z-50 border-t border-pbm-border/80 px-2 pb-[calc(0.55rem+env(safe-area-inset-bottom))] pt-2 backdrop-blur-xl">
+    <nav className="bottom-nav-shell fixed inset-x-0 bottom-0 z-50 border-t border-pbm-border/80 px-2 pb-[calc(0.55rem+env(safe-area-inset-bottom))] pt-2 backdrop-blur-xl lg:hidden">
       <div className="mx-auto grid max-w-md grid-cols-5 gap-1">
         {items.map((item) => (
           <NavLink

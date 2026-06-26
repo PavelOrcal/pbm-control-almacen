@@ -65,6 +65,12 @@ a {
   padding-bottom: calc(5.75rem + env(safe-area-inset-bottom));
 }
 
+@media (min-width: 1024px) {
+  .safe-bottom {
+    padding-bottom: 2rem;
+  }
+}
+
 .app-shell {
   position: relative;
   overflow-x: hidden;
@@ -73,6 +79,36 @@ a {
     radial-gradient(circle at 100% 0%, rgba(56, 189, 248, 0.1), transparent 20rem),
     radial-gradient(circle at 50% 100%, rgba(30, 58, 95, 0.32), transparent 24rem),
     #07111f;
+}
+
+.desktop-sidebar {
+  background:
+    radial-gradient(circle at 0% 0%, rgba(0, 174, 239, 0.22), transparent 16rem),
+    linear-gradient(180deg, rgba(7, 17, 31, 0.96), rgba(10, 23, 40, 0.96)),
+    linear-gradient(135deg, rgba(56, 189, 248, 0.08), transparent 46%);
+  box-shadow: 18px 0 56px rgba(0, 0, 0, 0.38), inset -1px 0 0 rgba(56, 189, 248, 0.1);
+}
+
+.desktop-sidebar::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(56, 189, 248, 0.055) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(56, 189, 248, 0.04) 1px, transparent 1px);
+  background-size: 28px 28px;
+  opacity: 0.72;
+  mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.82), rgba(0, 0, 0, 0.22));
+}
+
+.desktop-sidebar > * {
+  position: relative;
+  z-index: 1;
+}
+
+.desktop-nav-link {
+  min-height: 3.05rem;
 }
 
 .app-shell::before,
@@ -212,6 +248,51 @@ a {
   }
 }
 
+@keyframes splash-in {
+  from {
+    opacity: 0;
+    transform: scale(1.02);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes splash-out {
+  to {
+    opacity: 0;
+    transform: scale(1.035);
+    filter: blur(10px);
+  }
+}
+
+@keyframes gear-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes orbit-light {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes loader-run {
+  from {
+    width: 0%;
+    opacity: 0.78;
+  }
+  to {
+    width: 100%;
+    opacity: 1;
+  }
+}
+
 .animate-card-in {
   animation: card-in 320ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
@@ -224,6 +305,93 @@ a {
   background: linear-gradient(90deg, rgba(148, 163, 184, 0.08), rgba(56, 189, 248, 0.18), rgba(148, 163, 184, 0.08));
   background-size: 200% 100%;
   animation: shimmer 1.4s ease-in-out infinite;
+}
+
+.premium-splash {
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 50% 28%, rgba(0, 174, 239, 0.25), transparent 18rem),
+    radial-gradient(circle at 70% 70%, rgba(56, 189, 248, 0.11), transparent 24rem),
+    linear-gradient(145deg, #07111f, #08182c 52%, #050b14);
+  animation: splash-in 420ms ease-out both;
+}
+
+.premium-splash::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(56, 189, 248, 0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(56, 189, 248, 0.045) 1px, transparent 1px);
+  background-size: 30px 30px;
+  mask-image: radial-gradient(circle at 50% 45%, rgba(0, 0, 0, 0.86), transparent 72%);
+}
+
+.premium-splash > * {
+  position: relative;
+  z-index: 1;
+}
+
+.premium-splash-out {
+  animation: splash-out 380ms ease-in forwards;
+}
+
+.splash-orbit {
+  position: relative;
+  display: grid;
+  height: 8.5rem;
+  width: 8.5rem;
+  place-items: center;
+}
+
+.splash-orbit::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  border: 1px solid rgba(56, 189, 248, 0.22);
+  background: conic-gradient(from 0deg, transparent, rgba(56, 189, 248, 0.95), transparent 34%, transparent);
+  animation: orbit-light 2.6s linear infinite;
+  mask: radial-gradient(circle, transparent 57%, #000 58%);
+}
+
+.splash-halo {
+  position: absolute;
+  inset: 1.2rem;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(56, 189, 248, 0.22), transparent 68%);
+  filter: blur(10px);
+}
+
+.splash-gear {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  height: 5.5rem;
+  width: 5.5rem;
+  place-items: center;
+  border-radius: 1.35rem;
+  border: 1px solid rgba(56, 189, 248, 0.38);
+  background: linear-gradient(145deg, rgba(17, 24, 39, 0.96), rgba(14, 26, 43, 0.86));
+  color: var(--pbm-glow);
+  box-shadow: 0 0 36px rgba(56, 189, 248, 0.24), inset 0 1px 0 rgba(255, 255, 255, 0.09);
+}
+
+.splash-gear svg {
+  animation: gear-spin 5.5s linear infinite;
+}
+
+.splash-loader {
+  background: linear-gradient(90deg, #00aeef, #38bdf8, #eaf2ff);
+  box-shadow: 0 0 18px rgba(56, 189, 248, 0.58);
+  animation: loader-run 1.45s ease-in-out both;
 }
 
 .premium-header {
@@ -265,6 +433,7 @@ a {
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.045), transparent 36%),
     linear-gradient(145deg, rgba(17, 24, 39, 0.94), rgba(10, 23, 40, 0.92));
+  backdrop-filter: blur(18px);
   box-shadow: 0 18px 40px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.065);
 }
 
@@ -332,7 +501,21 @@ a {
 }
 
 .pressable:active {
-  transform: scale(0.982);
+  transform: translateY(2px) scale(0.985);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .pressable:hover {
+    border-color: rgba(56, 189, 248, 0.42);
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.3), 0 0 28px rgba(56, 189, 248, 0.13);
+    transform: translateY(-2px);
+  }
+
+  .quick-action:hover,
+  .premium-card:hover,
+  .metric-card:hover {
+    border-color: rgba(56, 189, 248, 0.45);
+  }
 }
 
 .metric-card {
@@ -402,6 +585,35 @@ a {
   border: 1px solid rgba(30, 58, 95, 0.86);
   background: linear-gradient(145deg, rgba(17, 24, 39, 0.96), rgba(14, 26, 43, 0.82));
   box-shadow: 0 14px 30px rgba(0, 0, 0, 0.25);
+}
+
+.section-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  .section-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1280px) {
+  .section-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.desktop-dashboard-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+@media (min-width: 1280px) {
+  .desktop-dashboard-grid {
+    grid-template-columns: minmax(0, 1.45fr) minmax(22rem, 0.8fr);
+    align-items: start;
+  }
 }
 
 .quick-action::after {

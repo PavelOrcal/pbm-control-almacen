@@ -13,7 +13,27 @@ export default function StockBodega() {
   if (error || !data) return <ErrorState message={error instanceof Error ? error.message : 'Error desconocido'} />;
 
   return (
-    <div className="screen-fade space-y-4">
+    <div className="screen-fade space-y-5">
+      <section className="hero-panel rounded-2xl p-5 lg:p-6">
+        <div className="relative z-10 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.2em] text-pbm-glow">Almacen operativo</p>
+            <h2 className="mt-2 text-3xl font-black text-pbm-text lg:text-5xl">Stock bodega</h2>
+            <p className="mt-2 max-w-2xl text-sm text-pbm-muted">Articulos, ubicacion, minimo y fechas calculadas desde movimientos.</p>
+          </div>
+          <div className="grid grid-cols-2 gap-2 text-center lg:w-80">
+            <div className="rounded-xl border border-pbm-blue/30 bg-pbm-bg/65 p-3">
+              <p className="text-3xl font-black text-pbm-text">{data.stockBodega.length}</p>
+              <p className="text-[0.65rem] text-pbm-muted">Articulos</p>
+            </div>
+            <div className="rounded-xl border border-pbm-yellow/30 bg-pbm-yellow/10 p-3">
+              <p className="text-3xl font-black text-pbm-yellow">{data.stockBodega.filter((articulo) => bodegaStockStatus(articulo) !== 'Suficiente').length}</p>
+              <p className="text-[0.65rem] text-pbm-muted">En riesgo</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <Link
         to="/movimiento-bodega"
         className="quick-action pressable flex min-h-14 items-center justify-center gap-2 rounded-lg px-4 text-sm font-black text-pbm-text"
@@ -22,7 +42,7 @@ export default function StockBodega() {
         Registrar movimiento bodega
       </Link>
 
-      <section className="space-y-3">
+      <section className="section-grid">
         {data.stockBodega.map((articulo) => {
           const status = bodegaStockStatus(articulo);
           const dates = getBodegaMovementDates(articulo.idArticulo, data.movimientosBodega);

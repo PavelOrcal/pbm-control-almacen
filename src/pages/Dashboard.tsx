@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { ClientLogo } from '../components/ClientLogo';
+import { CountUp } from '../components/CountUp';
 import { DataCard } from '../components/DataCard';
 import { OfflineSyncCard } from '../components/OfflineSyncCard';
 import { PushPermissionCard } from '../components/PushPermissionCard';
@@ -136,48 +137,47 @@ export default function Dashboard() {
 
   return (
     <div className="screen-fade space-y-5">
-      <section className="hero-panel rounded-lg p-5">
+      <section className="hero-panel rounded-2xl p-5 lg:p-7">
         <div className="relative z-10">
           <div className="flex items-center justify-between gap-4">
-            <BrandLogo className="h-16 w-40 px-4" imageClassName="h-12" />
+            <BrandLogo className="h-16 w-40 px-4 lg:h-20 lg:w-56" imageClassName="h-12 lg:h-14" />
             <div className="rounded-lg border border-pbm-orange/40 bg-pbm-orange/10 px-3 py-2 text-right shadow-orange">
               <p className="text-[0.68rem] font-bold uppercase tracking-[0.12em] text-pbm-orange">Fuente</p>
               <p className="text-xs font-black text-pbm-text">{data.sync.source === 'mock' ? 'Mock temporal' : 'Google Sheet'}</p>
             </div>
           </div>
-          <div className="mt-6 max-w-xs">
+          <div className="mt-6 max-w-xl">
             <p className="text-[0.68rem] font-black uppercase tracking-[0.22em] text-pbm-glow">Paradigm Bio Metal</p>
-            <h2 className="mt-2 text-4xl font-black leading-none text-pbm-text">PBM Control</h2>
-            <p className="mt-3 text-sm font-semibold leading-relaxed text-pbm-muted">Centro de control operativo con lectura ejecutiva de clientes, maquinas, servicios y stock.</p>
+            <h2 className="mt-2 text-4xl font-black leading-none text-pbm-text lg:text-6xl">PBM Control</h2>
+            <p className="mt-3 text-sm font-semibold leading-relaxed text-pbm-muted lg:max-w-2xl lg:text-base">
+              Centro ejecutivo industrial para clientes, maquinas, servicios, alertas y control operativo.
+            </p>
           </div>
-          <div className="mt-5 grid grid-cols-4 gap-2 text-center">
-            <div className="rounded-md border border-pbm-blue/25 bg-pbm-bg/70 px-2 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,.05)]">
-              <p className="metric-value text-lg font-black text-pbm-text">{clientesActivos}</p>
+          <div className="mt-6 grid grid-cols-2 gap-2 text-center sm:grid-cols-4 lg:gap-3">
+            <div className="rounded-xl border border-pbm-blue/25 bg-pbm-bg/70 px-3 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,.05)]">
+              <p className="metric-value text-2xl font-black text-pbm-text"><CountUp value={clientesActivos} /></p>
               <p className="text-[0.65rem] text-pbm-muted">Clientes</p>
             </div>
-            <div className="rounded-md border border-pbm-blue/25 bg-pbm-bg/70 px-2 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,.05)]">
-              <p className="metric-value text-lg font-black text-pbm-text">{maquinasActivas}</p>
+            <div className="rounded-xl border border-pbm-blue/25 bg-pbm-bg/70 px-3 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,.05)]">
+              <p className="metric-value text-2xl font-black text-pbm-text"><CountUp value={maquinasActivas} /></p>
               <p className="text-[0.65rem] text-pbm-muted">Maquinas</p>
             </div>
-            <div className="rounded-md border border-pbm-blue/25 bg-pbm-bg/70 px-2 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,.05)]">
-              <p className="metric-value text-lg font-black text-pbm-text">{data.servicios.length}</p>
+            <div className="rounded-xl border border-pbm-blue/25 bg-pbm-bg/70 px-3 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,.05)]">
+              <p className="metric-value text-2xl font-black text-pbm-text"><CountUp value={data.servicios.length} /></p>
               <p className="text-[0.65rem] text-pbm-muted">Servicios</p>
             </div>
-            <div className="rounded-md border border-pbm-blue/25 bg-pbm-bg/70 px-2 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,.05)]">
-              <p className="metric-value text-lg font-black text-pbm-text">{inventoryUnlocked ? data.stockBodega.length : 'Bloq.'}</p>
+            <div className="rounded-xl border border-pbm-blue/25 bg-pbm-bg/70 px-3 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,.05)]">
+              <p className="metric-value text-2xl font-black text-pbm-text">{inventoryUnlocked ? <CountUp value={data.stockBodega.length} /> : 'Bloq.'}</p>
               <p className="text-[0.65rem] text-pbm-muted">{inventoryUnlocked ? 'Bodega' : 'Inventario'}</p>
             </div>
           </div>
         </div>
       </section>
 
-      <OfflineSyncCard />
-
-      <PushPermissionCard variant="dashboard" />
-
-      <SmartAlertsPanel alerts={smartAlerts} compact limit={2} />
-
-      <section className="grid grid-cols-2 gap-3">
+      <div className="desktop-dashboard-grid">
+        <div className="space-y-5">
+          <SmartAlertsPanel alerts={smartAlerts} compact limit={2} />
+          <section className="grid grid-cols-2 gap-3 lg:grid-cols-3">
         <StatCard label="Clientes activos" value={clientesActivos} icon={UsersRound} tone="blue" />
         <StatCard label="Maquinas activas" value={maquinasActivas} icon={Factory} tone="green" />
         <StatCard label="Pendientes" value={serviciosByStatus.Pendiente} icon={CalendarClock} tone="yellow" />
@@ -188,7 +188,13 @@ export default function Dashboard() {
         ) : (
           <StatCard label="Inventario protegido" value="Bloqueado" icon={LockKeyhole} tone="orange" detail="Stock y litraje ocultos" />
         )}
-      </section>
+          </section>
+        </div>
+        <aside className="space-y-4">
+          <OfflineSyncCard />
+          <PushPermissionCard variant="dashboard" />
+        </aside>
+      </div>
 
       {!inventoryUnlocked ? (
         <section className="premium-card rounded-lg p-4" data-accent="orange">
@@ -207,7 +213,7 @@ export default function Dashboard() {
         </section>
       ) : null}
 
-      <section className="panel-card rounded-lg p-4">
+      <section className="panel-card rounded-2xl p-4 lg:p-5">
         <div className="flex items-center justify-between gap-3">
           <div>
             <p className="text-xs font-black uppercase tracking-[0.16em] text-pbm-muted">Operacion del dia</p>
@@ -268,7 +274,7 @@ export default function Dashboard() {
           <h2 className="text-sm font-black uppercase tracking-[0.14em] text-pbm-muted">Clientes activos</h2>
           <UsersRound size={17} className="text-pbm-glow" aria-hidden="true" />
         </div>
-        <div className="space-y-3">
+        <div className="section-grid">
           {clientesDestacados.map((cliente) => (
             <DataCard
               key={cliente.idCliente}
@@ -292,7 +298,7 @@ export default function Dashboard() {
             <ArrowRight size={19} aria-hidden="true" />
           </div>
         </div>
-        <div className="grid grid-cols-1 gap-3 min-[380px]:grid-cols-2">
+        <div className="grid grid-cols-1 gap-3 min-[380px]:grid-cols-2 xl:grid-cols-4">
           {visibleAccesses.map((acceso, index) => {
             const Icon = acceso.icon;
             return (

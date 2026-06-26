@@ -1,5 +1,6 @@
 import type { LucideIcon } from 'lucide-react';
 import { classNames } from '../lib/formatters';
+import { CountUp } from './CountUp';
 
 export function StatCard({
   label,
@@ -27,7 +28,9 @@ export function StatCard({
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-xs font-semibold uppercase tracking-normal text-pbm-muted">{label}</p>
-          <p className="metric-value mt-2 text-3xl font-black leading-none text-pbm-text">{value}</p>
+          <p className="metric-value mt-2 text-3xl font-black leading-none text-pbm-text">
+            {typeof value === 'number' ? <CountUp value={value} /> : value}
+          </p>
         </div>
         <div className={classNames('rounded-lg border p-2.5', toneClass)}>
           <Icon size={20} aria-hidden="true" />

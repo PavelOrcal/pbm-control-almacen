@@ -79,7 +79,7 @@ export default function Alertas() {
 
   return (
     <div className="screen-fade space-y-5">
-      <section className="hero-panel rounded-lg p-5">
+      <section className="hero-panel rounded-2xl p-5 lg:p-6">
         <div className="relative z-10">
           <div className="flex items-start justify-between gap-4">
             <div>
@@ -113,7 +113,7 @@ export default function Alertas() {
         </div>
       </section>
 
-      <section className="panel-card rounded-lg p-4">
+      <section className="panel-card rounded-2xl p-4 lg:sticky lg:top-24 lg:z-20">
         <div className="flex items-start gap-3">
           <div className="rounded-lg border border-pbm-blue/30 bg-pbm-blue/10 p-2 text-pbm-glow">
             <Filter size={19} aria-hidden="true" />
@@ -169,7 +169,7 @@ export default function Alertas() {
                   <StatusBadge tone={alertLevelTone(items[0].nivel)}>{items.length}</StatusBadge>
                 </div>
               </div>
-              <div className="space-y-3">
+              <div className="grid gap-3 xl:grid-cols-2">
                 {items.map((alert) => (
                   <SmartAlertCard key={alert.id} alert={alert} />
                 ))}

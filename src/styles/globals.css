@@ -611,7 +611,7 @@ a {
 
 @media (min-width: 1280px) {
   .desktop-dashboard-grid {
-    grid-template-columns: minmax(0, 1.45fr) minmax(22rem, 0.8fr);
+    grid-template-columns: minmax(0, 1fr) minmax(280px, 340px);
     align-items: start;
   }
 }

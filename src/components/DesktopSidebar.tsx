@@ -33,7 +33,7 @@ export function DesktopSidebar() {
   const items = navItems.filter((item) => !item.adminOnly || canAccessWarehouse(user));
 
   return (
-    <aside className="desktop-sidebar fixed inset-y-0 left-0 z-50 hidden w-72 flex-col border-r border-pbm-border/80 p-4 lg:flex">
+    <aside className="desktop-sidebar fixed inset-y-0 left-0 z-50 hidden w-[17.5rem] flex-col border-r border-pbm-border/80 p-4 lg:flex">
       <BrandLogo className="h-20 w-full px-6" imageClassName="max-h-14" />
       <div className="mt-5 rounded-xl border border-pbm-blue/25 bg-pbm-bg/35 p-4">
         <p className="text-[0.68rem] font-black uppercase tracking-[0.18em] text-pbm-glow">Paradigm Bio Metal</p>

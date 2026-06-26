@@ -32,10 +32,34 @@ export function OfflineSyncManager() {
   return null;
 }
 
-export function OfflineSyncCard({ showEntries = false }: { showEntries?: boolean }) {
+export function OfflineSyncCard({ showEntries = false, compact = false }: { showEntries?: boolean; compact?: boolean }) {
   const { isOnline, summary, entries, isSyncing, lastResult, syncNow, discardAction } = useOfflineQueue();
   const accent = !isOnline ? 'red' : summary.errorCount > 0 ? 'orange' : summary.totalActive > 0 ? 'yellow' : 'green';
   const Icon = isOnline ? Wifi : WifiOff;
+
+  if (compact) {
+    return (
+      <section className="panel-card rounded-lg px-3 py-2.5" data-accent={accent}>
+        <div className="flex items-center gap-3">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-pbm-blue/35 bg-pbm-blue/10 text-pbm-glow shadow-glow">
+            <Icon size={18} aria-hidden="true" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-black text-pbm-text">{isOnline ? 'Online' : 'Sin conexion'}</p>
+            <p className="truncate text-[0.7rem] font-semibold text-pbm-muted">{summary.totalActive} pendiente(s) / {formatSyncDate(summary.lastSyncAt)}</p>
+          </div>
+          <button
+            type="button"
+            disabled={isSyncing || (!isOnline && summary.totalActive === 0)}
+            onClick={() => void syncNow()}
+            className="pressable inline-flex min-h-9 shrink-0 items-center justify-center rounded-lg border border-pbm-blue/45 bg-pbm-blue/10 px-3 text-xs font-black text-pbm-glow disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {isSyncing ? 'Sync...' : 'Sync'}
+          </button>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="premium-card rounded-lg p-4" data-accent={accent}>

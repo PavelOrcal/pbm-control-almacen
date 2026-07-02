@@ -343,6 +343,77 @@ a {
   animation: splash-out 380ms ease-in forwards;
 }
 
+.app-lock-screen {
+  position: relative;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 50% 18%, rgba(0, 174, 239, 0.2), transparent 22rem),
+    radial-gradient(circle at 12% 88%, rgba(56, 189, 248, 0.09), transparent 20rem),
+    radial-gradient(circle at 90% 80%, rgba(245, 158, 11, 0.07), transparent 18rem),
+    linear-gradient(145deg, #07111f, #08182c 52%, #050b14);
+}
+
+.app-lock-screen::before,
+.app-lock-screen::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.app-lock-screen::before {
+  background-image:
+    linear-gradient(rgba(56, 189, 248, 0.065) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(56, 189, 248, 0.045) 1px, transparent 1px);
+  background-size: 30px 30px;
+  mask-image: radial-gradient(circle at 50% 45%, rgba(0, 0, 0, 0.9), transparent 78%);
+}
+
+.app-lock-screen::after {
+  background:
+    linear-gradient(115deg, transparent 18%, rgba(56, 189, 248, 0.045) 35%, transparent 52%),
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.018) 0 1px, transparent 1px 5px);
+}
+
+.app-lock-panel {
+  position: relative;
+  width: min(36rem, calc(100vw - 2rem));
+  overflow: hidden;
+  border: 1px solid rgba(56, 189, 248, 0.28);
+  background:
+    linear-gradient(155deg, rgba(17, 24, 39, 0.95), rgba(10, 24, 43, 0.92)),
+    rgba(7, 17, 31, 0.94);
+  box-shadow:
+    0 28px 80px rgba(0, 0, 0, 0.48),
+    0 0 42px rgba(56, 189, 248, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.07);
+}
+
+.app-lock-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(56, 189, 248, 0.9), transparent);
+  box-shadow: 0 0 18px rgba(56, 189, 248, 0.42);
+}
+
+.app-lock-emblem {
+  display: grid;
+  height: 4.75rem;
+  width: 4.75rem;
+  place-items: center;
+  border-radius: 1.2rem;
+  border: 1px solid rgba(245, 158, 11, 0.38);
+  background: linear-gradient(145deg, rgba(245, 158, 11, 0.16), rgba(14, 26, 43, 0.92));
+  color: var(--pbm-orange);
+  box-shadow:
+    0 0 30px rgba(245, 158, 11, 0.13),
+    inset 0 1px 0 rgba(255, 255, 255, 0.07);
+}
+
 .splash-orbit {
   position: relative;
   display: grid;

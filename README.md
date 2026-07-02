@@ -53,6 +53,15 @@ npm run build
 5. Agrega la variable de entorno `VITE_API_URL` con la URL del Apps Script.
 6. Deploy.
 
+## Modo mantenimiento administrativo
+
+El acceso completo a la app puede pausarse temporalmente desde las variables de entorno publicas de Netlify:
+
+- Activar: define `VITE_APP_LOCKED=true` y ejecuta un nuevo deploy.
+- Desactivar: define `VITE_APP_LOCKED=false` o elimina la variable y ejecuta un nuevo deploy.
+
+Este modo solo reemplaza la interfaz por la pantalla de pausa. No elimina ni modifica datos de Google Sheet, Apps Script, Drive, Firebase, `sessionStorage`, IndexedDB, la cola offline o las fotos temporales.
+
 ## Operaciones V1
 
 - Leer todas las tablas desde el Sheet.

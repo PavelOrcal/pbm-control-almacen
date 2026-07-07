@@ -1115,3 +1115,108 @@ Pendientes sugeridos:
 - V2.8.2 reportes premium con graficas reales.
 - V2.8.3 onboarding de instalacion PWA.
 - V2.8.4 refinamiento visual final con pruebas en dispositivos fisicos.
+
+## Modulo admin: Ingreso Factura Producto
+
+`Ingreso Factura Producto` es un modulo aislado para usuarios admin. Sirve para registrar facturas/comprobantes PDF por cliente y calcular un saldo informativo de litros. No modifica `Stock Productos`, `Movimientos Producto`, `Movimientos Bodega`, servicios activos, historial operativo, alertas, push, Drive de evidencias ni offline queue.
+
+Ruta:
+
+- `/ingreso-factura-producto`
+
+Permisos:
+
+- Solo usuarios con rol `admin`.
+- Los usuarios `operativo` no ven el acceso en Sidebar ni en Mas modulos.
+- Si un operativo entra por URL directa, recibe la pantalla de acceso restringido.
+
+Hoja nueva requerida en Google Sheet:
+
+`Ingreso Factura Producto`
+
+Columnas exactas:
+
+1. `ID Ingreso Factura`
+2. `Fecha Registro`
+3. `ID Cliente`
+4. `Cliente`
+5. `Litros Entrada`
+6. `Litros Salida Manual`
+7. `Litros Servicios Realizados`
+8. `Saldo Informativo`
+9. `Factura PDF`
+10. `Comprobante Pago PDF`
+11. `Carpeta Drive`
+12. `Responsable`
+13. `Observaciones`
+14. `Eliminado`
+
+Validaciones:
+
+- `Litros Entrada` es obligatorio y debe ser entero positivo.
+- `Litros Salida Manual` es opcional; si se captura, debe ser entero positivo.
+- No se aceptan decimales, negativos, cero como movimiento real, letras ni valores vacios cuando el campo es obligatorio.
+- `Factura PDF` es obligatoria.
+- `Comprobante Pago PDF` es opcional y queda especialmente disponible para Capstone.
+- Solo se permiten archivos PDF.
+
+Calculo aislado:
+
+```text
+Saldo Informativo =
+Total Litros Entrada del cliente
+- Total Litros Salida Manual del cliente
+- Litros Servicios Realizados del cliente
+```
+
+`Litros Servicios Realizados` se calcula desde `Historial Servicios`, sumando `Litros Usados` del cliente e ignorando registros con `Eliminado = SI`. Este calculo solo vive en el modulo de facturas y no descuenta stock operativo.
+
+Drive:
+
+Apps Script crea o reutiliza la carpeta raiz:
+
+`PBM Control - Ingreso Factura Producto`
+
+Estructura:
+
+```text
+PBM Control - Ingreso Factura Producto/
+  CLIENTE/
+    Facturas/
+    Evidencia/
+```
+
+Nombres de archivo:
+
+- `factura_CLIENTE_FECHA_ID.pdf`
+- `comprobante_CLIENTE_FECHA_ID.pdf`
+
+Para Capstone Copper / Capstone Cooper, los comprobantes de pago se guardan en `Evidencia`.
+
+Apps Script:
+
+- Copia `apps-script/sheets.gs`.
+- Copia `apps-script/routes.gs`.
+- Copia `apps-script/drive.gs`.
+- Crea la hoja `Ingreso Factura Producto` con las columnas exactas.
+- Crea nueva version/implementacion de Apps Script.
+- La URL `/exec` no cambia si actualizas la misma implementacion.
+
+Acciones agregadas:
+
+- `createIngresoFacturaProducto`
+- `markIngresoFacturaProductoDeleted`
+
+Prueba rapida:
+
+1. Copia los archivos Apps Script indicados.
+2. Publica nueva version de implementacion.
+3. Entra como admin.
+4. Abre `/ingreso-factura-producto` desde Sidebar o Mas modulos.
+5. Selecciona cliente.
+6. Captura litros enteros.
+7. Sube factura PDF.
+8. Si aplica, sube comprobante PDF.
+9. Guarda registro.
+10. Confirma que Drive creo las carpetas y que el Sheet guardo URLs.
+11. Entra como operativo y confirma que el modulo no aparece ni permite acceso directo.

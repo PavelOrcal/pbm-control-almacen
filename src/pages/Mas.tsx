@@ -1,4 +1,4 @@
-import { BellRing, Boxes, Database, Factory, History, PackagePlus, ShieldCheck, UserRound, Warehouse } from 'lucide-react';
+import { BellRing, Boxes, Database, Factory, History, PackagePlus, ReceiptText, ShieldCheck, UserRound, Warehouse } from 'lucide-react';
 import { DataCard } from '../components/DataCard';
 import { PushBackendStatusCard } from '../components/PushBackendStatusCard';
 import { PushPermissionCard } from '../components/PushPermissionCard';
@@ -67,6 +67,7 @@ export default function Mas() {
         {isAdmin ? (
           <>
             <DataCard title="Stock bodega" subtitle="Articulos, stock minimo y estado" to="/stock-bodega" accent="green" meta={<Warehouse size={18} className="text-pbm-green" />} />
+            <DataCard title="Ingreso factura producto" subtitle="Facturas, PDFs y saldo informativo por cliente" to="/ingreso-factura-producto" accent="blue" meta={<ReceiptText size={18} className="text-pbm-glow" />} />
             <DataCard title="Movimiento producto" subtitle="Entrada o salida de producto" to="/movimiento-producto" accent="orange" meta={<PackagePlus size={18} className="text-pbm-orange" />} />
             <DataCard title="Movimiento bodega" subtitle="Entrada o salida de articulos" to="/movimiento-bodega" accent="orange" meta={<Boxes size={18} className="text-pbm-orange" />} />
           </>

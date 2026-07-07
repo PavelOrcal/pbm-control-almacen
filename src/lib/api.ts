@@ -4,6 +4,8 @@ import type {
   ArticuloBodega,
   Cliente,
   HistorialServicio,
+  IngresoFacturaProducto,
+  IngresoFacturaProductoInput,
   Maquina,
   MovimientoBodega,
   MovimientoBodegaInput,
@@ -16,7 +18,7 @@ import type {
   Servicio,
   ServicioUpdateInput
 } from '../types/pbm';
-import { activeHistorialServicios, activeMovimientosBodega, activeMovimientosProducto, activeServicios } from './records';
+import { activeHistorialServicios, activeIngresosFacturaProducto, activeMovimientosBodega, activeMovimientosProducto, activeServicios } from './records';
 
 const API_URL = import.meta.env.VITE_API_URL?.trim();
 const APPS_SCRIPT_JSONP_TIMEOUT_DETAIL = 'Tiempo de espera agotado usando JSONP con Apps Script';
@@ -197,13 +199,33 @@ function normalizeMovimientoBodega(row: Record<string, unknown>): MovimientoBode
   };
 }
 
+function normalizeIngresoFacturaProducto(row: Record<string, unknown>): IngresoFacturaProducto {
+  return {
+    idIngresoFactura: rowValue(row, 'ID Ingreso Factura', 'idIngresoFactura'),
+    fechaRegistro: rowValue(row, 'Fecha Registro', 'fechaRegistro'),
+    idCliente: rowValue(row, 'ID Cliente', 'idCliente'),
+    cliente: rowValue(row, 'Cliente', 'cliente'),
+    litrosEntrada: toNumber(row['litrosEntrada'] ?? row['Litros Entrada']),
+    litrosSalidaManual: toNumber(row['litrosSalidaManual'] ?? row['Litros Salida Manual']),
+    litrosServiciosRealizados: toNumber(row['litrosServiciosRealizados'] ?? row['Litros Servicios Realizados']),
+    saldoInformativo: toNumber(row['saldoInformativo'] ?? row['Saldo Informativo']),
+    facturaPdf: rowValue(row, 'Factura PDF', 'facturaPdf'),
+    comprobantePagoPdf: rowValue(row, 'Comprobante Pago PDF', 'comprobantePagoPdf'),
+    carpetaDrive: rowValue(row, 'Carpeta Drive', 'carpetaDrive'),
+    responsable: rowValue(row, 'Responsable', 'responsable'),
+    observaciones: rowValue(row, 'Observaciones', 'observaciones'),
+    eliminado: rowValue(row, 'Eliminado', 'eliminado') || 'NO'
+  };
+}
+
 function filterDeleted(data: PbmData): PbmData {
   return {
     ...data,
     servicios: activeServicios(data.servicios),
     historialServicios: activeHistorialServicios(data.historialServicios),
     movimientosProducto: activeMovimientosProducto(data.movimientosProducto),
-    movimientosBodega: activeMovimientosBodega(data.movimientosBodega)
+    movimientosBodega: activeMovimientosBodega(data.movimientosBodega),
+    ingresoFacturaProducto: activeIngresosFacturaProducto(data.ingresoFacturaProducto)
   };
 }
 
@@ -225,6 +247,9 @@ function normalizePbmData(payload: unknown): PbmData {
   const movimientosBodega = ((root.movimientosBodega ?? root['Movimientos Bodega'] ?? []) as Record<string, unknown>[]).map(
     normalizeMovimientoBodega
   );
+  const ingresoFacturaProducto = ((root.ingresoFacturaProducto ?? root['Ingreso Factura Producto'] ?? []) as Record<string, unknown>[]).map(
+    normalizeIngresoFacturaProducto
+  );
 
   return filterDeleted({
     clientes,
@@ -235,6 +260,7 @@ function normalizePbmData(payload: unknown): PbmData {
     movimientosProducto,
     stockBodega,
     movimientosBodega,
+    ingresoFacturaProducto,
     sync: {
       source: API_URL ? 'apps-script' : 'mock',
       loadedAt: new Date().toISOString(),
@@ -473,6 +499,51 @@ export async function appendMovimientoBodega(input: MovimientoBodegaInput): Prom
   }
 
   await postAction('appendMovimientoBodega', { row: input });
+}
+
+export async function createIngresoFacturaProducto(input: IngresoFacturaProductoInput): Promise<void> {
+  if (!API_URL) {
+    const idIngresoFactura = nextId(
+      mockStore.ingresoFacturaProducto.map((item) => item.idIngresoFactura),
+      'IFP'
+    );
+    const clienteRows = mockStore.ingresoFacturaProducto.filter((item) => item.idCliente === input.idCliente);
+    const litrosServiciosRealizados = mockStore.historialServicios
+      .filter((item) => item.idCliente === input.idCliente && String(item.eliminado ?? '').toUpperCase() !== 'SI')
+      .reduce((total, item) => total + (item.litrosUsados ?? 0), 0);
+    const totalEntrada = clienteRows.reduce((total, item) => total + (item.litrosEntrada ?? 0), 0) + input.litrosEntrada;
+    const totalSalidaManual = clienteRows.reduce((total, item) => total + (item.litrosSalidaManual ?? 0), 0) + (input.litrosSalidaManual ?? 0);
+    mockStore.ingresoFacturaProducto.unshift({
+      idIngresoFactura,
+      fechaRegistro: input.fechaRegistro,
+      idCliente: input.idCliente,
+      cliente: input.cliente,
+      litrosEntrada: input.litrosEntrada,
+      litrosSalidaManual: input.litrosSalidaManual ?? 0,
+      litrosServiciosRealizados,
+      saldoInformativo: totalEntrada - totalSalidaManual - litrosServiciosRealizados,
+      facturaPdf: input.facturaPdf.fileName,
+      comprobantePagoPdf: input.comprobantePagoPdf?.fileName ?? '',
+      carpetaDrive: '',
+      responsable: input.responsable,
+      observaciones: input.observaciones ?? '',
+      eliminado: 'NO'
+    });
+    return;
+  }
+
+  await postAction('createIngresoFacturaProducto', { row: input }, { forcePost: true });
+}
+
+export async function markIngresoFacturaProductoDeleted(idIngresoFactura: string): Promise<void> {
+  if (!API_URL) {
+    mockStore.ingresoFacturaProducto = mockStore.ingresoFacturaProducto.map((ingreso) =>
+      ingreso.idIngresoFactura === idIngresoFactura ? { ...ingreso, eliminado: 'SI' } : ingreso
+    );
+    return;
+  }
+
+  await postAction('markIngresoFacturaProductoDeleted', { idIngresoFactura });
 }
 
 export async function updateServicio(input: ServicioUpdateInput): Promise<void> {

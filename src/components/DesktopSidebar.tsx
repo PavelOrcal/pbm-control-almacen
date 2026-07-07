@@ -6,6 +6,7 @@ import {
   History,
   Home,
   PackageSearch,
+  ReceiptText,
   Settings,
   UsersRound,
   Wifi
@@ -24,6 +25,7 @@ const navItems = [
   { to: '/historial', label: 'Historial', icon: History },
   { to: '/stock-productos', label: 'Stock productos', icon: PackageSearch, adminOnly: true },
   { to: '/stock-bodega', label: 'Stock bodega', icon: Boxes, adminOnly: true },
+  { to: '/ingreso-factura-producto', label: 'Ingreso factura', icon: ReceiptText, adminOnly: true },
   { to: '/sync', label: 'Sincronizacion', icon: Wifi },
   { to: '/mas', label: 'Mas modulos', icon: Settings }
 ];

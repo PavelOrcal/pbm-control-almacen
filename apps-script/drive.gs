@@ -1,4 +1,5 @@
 const DRIVE_EVIDENCE_FOLDER_ID = '1vS692cqzmcWAvy83LCLGU47fNTBgF2z_';
+const DRIVE_INGRESO_FACTURA_ROOT_NAME = 'PBM Control - Ingreso Factura Producto';
 
 function appScriptError(code, message) {
   throw new Error(code + ': ' + message);
@@ -43,6 +44,21 @@ function getOrCreateChildFolder(parent, name) {
   } catch (error) {
     appScriptError('DRIVE_PERMISSION_DENIED', 'No se pudo crear o abrir carpeta en Drive: ' + safeName + '. ' + String(error && error.message ? error.message : error));
   }
+}
+
+function getOrCreateRootFolderByName(name) {
+  const safeName = sanitizeDriveName(name);
+  try {
+    const existing = DriveApp.getFoldersByName(safeName);
+    if (existing.hasNext()) return existing.next();
+    return DriveApp.createFolder(safeName);
+  } catch (error) {
+    appScriptError('DRIVE_PERMISSION_DENIED', 'No se pudo crear o abrir carpeta raiz en Drive: ' + safeName + '. ' + String(error && error.message ? error.message : error));
+  }
+}
+
+function safeFileToken(value) {
+  return sanitizeDriveName(value).replace(/\s+/g, '_').slice(0, 80);
 }
 
 function tryShareWithLink_(driveItem) {
@@ -94,6 +110,71 @@ function photoToBlob(photo, fileName) {
   } catch (error) {
     appScriptError('INVALID_PHOTO_PAYLOAD', 'No se pudo convertir la foto a Blob: ' + fileName + '. ' + String(error && error.message ? error.message : error));
   }
+}
+
+function pdfToBlob(pdf, fileName) {
+  if (!pdf || !pdf.dataUrl) {
+    appScriptError('INVALID_PDF_PAYLOAD', 'PDF sin dataUrl: ' + fileName);
+  }
+  const dataUrl = String(pdf.dataUrl || '');
+  const match = dataUrl.match(/^data:([^;]+);base64,(.+)$/);
+  if (!match) {
+    appScriptError('INVALID_PDF_PAYLOAD', 'El PDF no viene en formato data URL base64: ' + fileName);
+  }
+  const mimeType = pdf.mimeType || match[1] || 'application/pdf';
+  if (String(mimeType).toLowerCase() !== 'application/pdf') {
+    appScriptError('INVALID_PDF_PAYLOAD', 'Solo se permiten archivos PDF: ' + fileName);
+  }
+  try {
+    const bytes = Utilities.base64Decode(match[2]);
+    return Utilities.newBlob(bytes, 'application/pdf', fileName);
+  } catch (error) {
+    appScriptError('INVALID_PDF_PAYLOAD', 'No se pudo convertir el PDF a Blob: ' + fileName + '. ' + String(error && error.message ? error.message : error));
+  }
+}
+
+function uploadIngresoFacturaProductoPdfs(body) {
+  const row = body.row || body;
+  const idIngresoFactura = row.idIngresoFactura || row['ID Ingreso Factura'];
+  const cliente = row.cliente || row.Cliente || 'SIN_CLIENTE';
+  const fecha = dateForFile(row.fechaRegistro || row['Fecha Registro']);
+  if (!idIngresoFactura) appScriptError('INVALID_INGRESO_FACTURA', 'idIngresoFactura is required para nombrar PDFs.');
+  if (!row.facturaPdf || !row.facturaPdf.dataUrl) appScriptError('INVALID_PDF_PAYLOAD', 'Factura PDF es obligatoria.');
+
+  const root = getOrCreateRootFolderByName(DRIVE_INGRESO_FACTURA_ROOT_NAME);
+  const clienteFolder = getOrCreateChildFolder(root, cliente);
+  const facturasFolder = getOrCreateChildFolder(clienteFolder, 'Facturas');
+  const evidenciaFolder = getOrCreateChildFolder(clienteFolder, 'Evidencia');
+  const clientToken = safeFileToken(cliente);
+  const uploaded = {
+    facturaPdf: '',
+    comprobantePagoPdf: '',
+    carpetaDrive: clienteFolder.getUrl(),
+    sharedWithLink: true
+  };
+
+  try {
+    const facturaName = 'factura_' + clientToken + '_' + fecha + '_' + safeFileToken(idIngresoFactura) + '.pdf';
+    const facturaFile = facturasFolder.createFile(pdfToBlob(row.facturaPdf, facturaName)).setName(facturaName);
+    const facturaShared = tryShareWithLink_(facturaFile);
+    uploaded.sharedWithLink = uploaded.sharedWithLink && facturaShared;
+    uploaded.facturaPdf = facturaFile.getUrl();
+
+    if (row.comprobantePagoPdf && row.comprobantePagoPdf.dataUrl) {
+      const comprobanteName = 'comprobante_' + clientToken + '_' + fecha + '_' + safeFileToken(idIngresoFactura) + '.pdf';
+      const comprobanteFile = evidenciaFolder.createFile(pdfToBlob(row.comprobantePagoPdf, comprobanteName)).setName(comprobanteName);
+      const comprobanteShared = tryShareWithLink_(comprobanteFile);
+      uploaded.sharedWithLink = uploaded.sharedWithLink && comprobanteShared;
+      uploaded.comprobantePagoPdf = comprobanteFile.getUrl();
+    }
+  } catch (error) {
+    const message = String(error && error.message ? error.message : error);
+    if (message.indexOf('INVALID_PDF_PAYLOAD') !== -1) throw error;
+    if (message.indexOf('DRIVE_') !== -1) throw error;
+    appScriptError('PDF_UPLOAD_FAILED', 'Fallo al subir PDFs de Ingreso Factura Producto a Drive. ' + message);
+  }
+
+  return uploaded;
 }
 
 function hasPhotoPayload(fotos) {

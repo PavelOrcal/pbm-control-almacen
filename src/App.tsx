@@ -17,6 +17,7 @@ import MovimientoProducto from './pages/MovimientoProducto';
 import StockBodega from './pages/StockBodega';
 import ArticuloBodegaDetalle from './pages/ArticuloBodegaDetalle';
 import MovimientoBodega from './pages/MovimientoBodega';
+import IngresoFacturaProducto from './pages/IngresoFacturaProducto';
 import Historial from './pages/Historial';
 import MovimientoHistorialDetalle from './pages/MovimientoHistorialDetalle';
 import HistorialServicioDetalle from './pages/HistorialServicioDetalle';
@@ -58,6 +59,7 @@ export default function App() {
             <Route path="stock-bodega" element={<ProtectedModule><StockBodega /></ProtectedModule>} />
             <Route path="stock-bodega/:idArticulo" element={<ProtectedModule><ArticuloBodegaDetalle /></ProtectedModule>} />
             <Route path="movimiento-bodega" element={<ProtectedModule><MovimientoBodega /></ProtectedModule>} />
+            <Route path="ingreso-factura-producto" element={<ProtectedModule><IngresoFacturaProducto /></ProtectedModule>} />
             <Route path="historial" element={<Historial />} />
             <Route path="historial-servicios/:idHistorialServicio" element={<HistorialServicioDetalle />} />
             <Route path="historial/:origen/:idMovimiento" element={<MovimientoHistorialDetalle />} />

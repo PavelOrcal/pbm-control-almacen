@@ -31,6 +31,7 @@ export type SheetTable =
   | 'Movimientos Producto'
   | 'Stock Bodega'
   | 'Movimientos Bodega'
+  | 'Ingreso Factura Producto'
   | 'Push Tokens'
   | 'Push Logs';
 
@@ -151,6 +152,23 @@ export interface MovimientoBodega {
   eliminado?: SiNo | string;
 }
 
+export interface IngresoFacturaProducto {
+  idIngresoFactura: string;
+  fechaRegistro: string;
+  idCliente: string;
+  cliente: string;
+  litrosEntrada: number | null;
+  litrosSalidaManual: number | null;
+  litrosServiciosRealizados: number | null;
+  saldoInformativo: number | null;
+  facturaPdf: string;
+  comprobantePagoPdf: string;
+  carpetaDrive: string;
+  responsable: Responsable;
+  observaciones: string;
+  eliminado?: SiNo | string;
+}
+
 export interface PbmData {
   clientes: Cliente[];
   maquinas: Maquina[];
@@ -160,6 +178,7 @@ export interface PbmData {
   movimientosProducto: MovimientoProducto[];
   stockBodega: ArticuloBodega[];
   movimientosBodega: MovimientoBodega[];
+  ingresoFacturaProducto: IngresoFacturaProducto[];
   sync: SyncMeta;
 }
 
@@ -188,6 +207,25 @@ export interface MovimientoBodegaInput {
   cantidad: number;
   responsable: string;
   motivo: string;
+}
+
+export interface PdfUploadPayload {
+  fileName: string;
+  mimeType: 'application/pdf' | string;
+  dataUrl: string;
+  sizeBytes: number;
+}
+
+export interface IngresoFacturaProductoInput {
+  fechaRegistro: string;
+  idCliente: string;
+  cliente: string;
+  litrosEntrada: number;
+  litrosSalidaManual?: number | null;
+  responsable: string;
+  observaciones?: string;
+  facturaPdf: PdfUploadPayload;
+  comprobantePagoPdf?: PdfUploadPayload | null;
 }
 
 export interface ServicioUpdateInput {

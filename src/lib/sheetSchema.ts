@@ -105,6 +105,22 @@ export const SHEET_HEADERS: Record<SheetTable, string[]> = {
     'Motivo',
     'Eliminado'
   ],
+  'Ingreso Factura Producto': [
+    'ID Ingreso Factura',
+    'Fecha Registro',
+    'ID Cliente',
+    'Cliente',
+    'Litros Entrada',
+    'Litros Salida Manual',
+    'Litros Servicios Realizados',
+    'Saldo Informativo',
+    'Factura PDF',
+    'Comprobante Pago PDF',
+    'Carpeta Drive',
+    'Responsable',
+    'Observaciones',
+    'Eliminado'
+  ],
   'Push Tokens': [
     'ID Token',
     'Usuario',
@@ -143,6 +159,7 @@ export const TABLES: SheetTable[] = [
   'Movimientos Producto',
   'Stock Bodega',
   'Movimientos Bodega',
+  'Ingreso Factura Producto',
   'Push Tokens',
   'Push Logs'
 ];
@@ -151,6 +168,7 @@ export const ID_PREFIX_BY_TABLE: Partial<Record<SheetTable, string>> = {
   'Historial Servicios': 'HS',
   'Movimientos Producto': 'MP',
   'Movimientos Bodega': 'MB',
+  'Ingreso Factura Producto': 'IFP',
   'Push Tokens': 'PT',
   'Push Logs': 'PLG'
 };

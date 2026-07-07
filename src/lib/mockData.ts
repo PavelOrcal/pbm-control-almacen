@@ -109,6 +109,7 @@ export const mockData: PbmData = {
     { idMovimiento: 'MB-022', fecha: '08/06/2026', tipoMovimiento: 'Entrada', idArticulo: 'ART-022', cantidad: null, responsable: 'Omar', motivo: 'Compra inicial' },
     { idMovimiento: 'MB-023', fecha: '08/06/2026', tipoMovimiento: 'Entrada', idArticulo: 'ART-023', cantidad: 1, responsable: 'Omar', motivo: 'Compra inicial' }
   ],
+  ingresoFacturaProducto: [],
   sync: {
     source: 'mock',
     loadedAt: new Date().toISOString(),

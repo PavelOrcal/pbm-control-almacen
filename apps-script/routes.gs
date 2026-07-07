@@ -46,6 +46,14 @@ function handleMutation(body) {
     const result = appendMovimientoBodega(body.row || {});
     return { ok: true, data: result };
   }
+  if (body.action === 'createIngresoFacturaProducto') {
+    const result = createIngresoFacturaProducto(body.row || body);
+    return { ok: true, data: result };
+  }
+  if (body.action === 'markIngresoFacturaProductoDeleted') {
+    const result = markIngresoFacturaProductoDeleted(body.idIngresoFactura);
+    return { ok: true, data: result };
+  }
   if (body.action === 'createServicio') {
     const result = createServicio(body.row || {});
     return { ok: true, data: result };
@@ -132,6 +140,103 @@ function appendMovimientoBodega(row) {
     'Eliminado': 'NO'
   };
   return appendWithGeneratedId('Movimientos Bodega', 'ID Movimiento', 'MB', values);
+}
+
+function ingresoFacturaValue(row, key, header) {
+  return row[key] !== undefined ? row[key] : row[header];
+}
+
+function requirePositiveInteger(value, label, required) {
+  const text = String(value === null || value === undefined ? '' : value).trim();
+  if (!text) {
+    if (required) throw new Error(label + ' es obligatorio');
+    return 0;
+  }
+  if (!/^[1-9]\d*$/.test(text)) {
+    throw new Error(label + ' debe ser un numero entero positivo');
+  }
+  return Number(text);
+}
+
+function sumHistorialServiciosLitrosByCliente(idCliente) {
+  return readTable('Historial Servicios').reduce(function(total, row) {
+    if (normalizedText(row['Eliminado']).toUpperCase() === 'SI') return total;
+    if (normalizedText(row['ID Cliente']) !== normalizedText(idCliente)) return total;
+    const value = Number(String(row['Litros Usados'] || '0').replace(',', '.'));
+    return total + (isFinite(value) ? value : 0);
+  }, 0);
+}
+
+function sumIngresoFacturaByCliente(idCliente, header) {
+  return readTable('Ingreso Factura Producto').reduce(function(total, row) {
+    if (normalizedText(row['Eliminado']).toUpperCase() === 'SI') return total;
+    if (normalizedText(row['ID Cliente']) !== normalizedText(idCliente)) return total;
+    const value = Number(String(row[header] || '0').replace(',', '.'));
+    return total + (isFinite(value) ? value : 0);
+  }, 0);
+}
+
+function createIngresoFacturaProducto(row) {
+  const idCliente = normalizedText(ingresoFacturaValue(row, 'idCliente', 'ID Cliente'));
+  const cliente = normalizedText(ingresoFacturaValue(row, 'cliente', 'Cliente'));
+  const fechaRegistro = normalizedText(ingresoFacturaValue(row, 'fechaRegistro', 'Fecha Registro')) || pushTimestamp();
+  const responsable = normalizedText(ingresoFacturaValue(row, 'responsable', 'Responsable'));
+  if (!idCliente) throw new Error('ID Cliente es obligatorio');
+  if (!cliente) throw new Error('Cliente es obligatorio');
+  if (!responsable) throw new Error('Responsable es obligatorio');
+  if (!row.facturaPdf || !row.facturaPdf.dataUrl) throw new Error('Factura PDF es obligatoria');
+
+  const litrosEntrada = requirePositiveInteger(ingresoFacturaValue(row, 'litrosEntrada', 'Litros Entrada'), 'Litros Entrada', true);
+  const litrosSalidaManual = requirePositiveInteger(ingresoFacturaValue(row, 'litrosSalidaManual', 'Litros Salida Manual'), 'Litros Salida Manual', false);
+  requireHeaders(
+    getSheet('Ingreso Factura Producto'),
+    'Ingreso Factura Producto',
+    requiredExpectedHeaders('Ingreso Factura Producto')
+  );
+  const idIngresoFactura = nextId('Ingreso Factura Producto', 'ID Ingreso Factura', 'IFP');
+
+  const uploadResult = uploadIngresoFacturaProductoPdfs({
+    row: Object.assign({}, row, {
+      idIngresoFactura: idIngresoFactura,
+      fechaRegistro: fechaRegistro,
+      idCliente: idCliente,
+      cliente: cliente
+    })
+  });
+
+  const litrosServiciosRealizados = sumHistorialServiciosLitrosByCliente(idCliente);
+  const totalEntrada = sumIngresoFacturaByCliente(idCliente, 'Litros Entrada') + litrosEntrada;
+  const totalSalidaManual = sumIngresoFacturaByCliente(idCliente, 'Litros Salida Manual') + litrosSalidaManual;
+  const saldoInformativo = totalEntrada - totalSalidaManual - litrosServiciosRealizados;
+
+  const values = {
+    'Fecha Registro': fechaRegistro,
+    'ID Cliente': idCliente,
+    'Cliente': cliente,
+    'Litros Entrada': litrosEntrada,
+    'Litros Salida Manual': litrosSalidaManual,
+    'Litros Servicios Realizados': litrosServiciosRealizados,
+    'Saldo Informativo': saldoInformativo,
+    'Factura PDF': uploadResult.facturaPdf,
+    'Comprobante Pago PDF': uploadResult.comprobantePagoPdf,
+    'Carpeta Drive': uploadResult.carpetaDrive,
+    'Responsable': responsable,
+    'Observaciones': ingresoFacturaValue(row, 'observaciones', 'Observaciones') || '',
+    'Eliminado': 'NO'
+  };
+
+  return Object.assign(
+    appendWithProvidedId('Ingreso Factura Producto', 'ID Ingreso Factura', idIngresoFactura, values),
+    { sharedWithLink: uploadResult.sharedWithLink }
+  );
+}
+
+function markIngresoFacturaProductoDeleted(idIngresoFactura) {
+  if (!idIngresoFactura) throw new Error('idIngresoFactura is required');
+  updateById('Ingreso Factura Producto', 'ID Ingreso Factura', idIngresoFactura, {
+    'Eliminado': 'SI'
+  });
+  return { idIngresoFactura: idIngresoFactura, eliminado: 'SI' };
 }
 
 function createServicio(row) {

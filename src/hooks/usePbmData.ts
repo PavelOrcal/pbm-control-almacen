@@ -2,9 +2,11 @@ import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tansta
 import {
   appendMovimientoBodega,
   appendMovimientoProducto,
+  createIngresoFacturaProducto,
   createServicio,
   fetchPbmData,
   isAppsScriptJsonpTimeoutError,
+  markIngresoFacturaProductoDeleted,
   markHistorialServicioDeleted,
   markMovimientoBodegaDeleted,
   markMovimientoProductoDeleted,
@@ -19,7 +21,15 @@ import {
   OFFLINE_ACTION_QUEUED_MESSAGE,
   type OfflineActionType
 } from '../lib/offlineQueue';
-import type { MovimientoBodegaInput, MovimientoProductoInput, PbmData, ServicioCreateInput, ServicioRealizadoInput, ServicioUpdateInput } from '../types/pbm';
+import type {
+  IngresoFacturaProductoInput,
+  MovimientoBodegaInput,
+  MovimientoProductoInput,
+  PbmData,
+  ServicioCreateInput,
+  ServicioRealizadoInput,
+  ServicioUpdateInput
+} from '../types/pbm';
 
 export const PBM_DATA_QUERY_KEY = ['pbm-data'];
 
@@ -237,6 +247,22 @@ export function useMovimientoBodegaMutation(options: MovementMutationOptions = {
     onSuccess: (result) => {
       if (!result.verifiedAfterTimeout) void queryClient.invalidateQueries({ queryKey: PBM_DATA_QUERY_KEY });
     }
+  });
+}
+
+export function useIngresoFacturaProductoMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: IngresoFacturaProductoInput) => createIngresoFacturaProducto(input),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: PBM_DATA_QUERY_KEY })
+  });
+}
+
+export function useIngresoFacturaProductoDeleteMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (idIngresoFactura: string) => markIngresoFacturaProductoDeleted(idIngresoFactura),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: PBM_DATA_QUERY_KEY })
   });
 }
 

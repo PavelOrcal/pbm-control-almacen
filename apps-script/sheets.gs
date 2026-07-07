@@ -7,12 +7,13 @@ const SHEET_HEADERS = {
   'Movimientos Producto': ['ID Movimiento Producto', 'Fecha', 'Tipo Movimiento', 'ID Producto', 'Litros', 'ID Cliente', 'ID Maquina', 'ID Servicio', 'Motivo', 'Responsable', 'Eliminado'],
   'Stock Bodega': ['ID Articulo', 'Articulo', 'Categoria', 'Unidad', 'Stock Minimo', 'Ubicacion', 'Activo', 'Stock Actual'],
   'Movimientos Bodega': ['ID Movimiento', 'Fecha', 'Tipo Movimiento', 'ID Articulo', 'Cantidad', 'Responsable', 'Motivo', 'Eliminado'],
+  'Ingreso Factura Producto': ['ID Ingreso Factura', 'Fecha Registro', 'ID Cliente', 'Cliente', 'Litros Entrada', 'Litros Salida Manual', 'Litros Servicios Realizados', 'Saldo Informativo', 'Factura PDF', 'Comprobante Pago PDF', 'Carpeta Drive', 'Responsable', 'Observaciones', 'Eliminado'],
   'Push Tokens': ['ID Token', 'Usuario', 'Rol', 'Token', 'Dispositivo', 'Navegador', 'Activo', 'Fecha Registro', 'Ultima Actualizacion'],
   'Push Logs': ['ID Push Log', 'Fecha Hora', 'Tipo', 'Usuario', 'Rol', 'Token', 'ID Servicio', 'Cliente', 'Titulo', 'Mensaje', 'Action URL', 'Estado', 'Error', 'Clave Unica']
 };
 
 const TABLE_NAMES = Object.keys(SHEET_HEADERS);
-const OPTIONAL_TABLES = ['Historial Servicios', 'Push Tokens', 'Push Logs'];
+const OPTIONAL_TABLES = ['Historial Servicios', 'Ingreso Factura Producto', 'Push Tokens', 'Push Logs'];
 const OPTIONAL_HEADERS = {
   'Servicios': ['Tipo Servicio', 'Litros Usados', 'Producto Usado', 'Eliminado'],
   'Historial Servicios': ['Fotos Servicio', 'Foto Antes', 'Foto Después', 'Foto Evidencia', 'Carpeta Drive', 'PDF Servicio', 'Eliminado'],
@@ -121,6 +122,20 @@ function appendWithGeneratedId(tableName, idHeader, prefix, valuesByHeader) {
   });
   sheet.appendRow(row);
   return Object.assign({ id: generatedId }, rowObject);
+}
+
+function appendWithProvidedId(tableName, idHeader, idValue, valuesByHeader) {
+  const sheet = getSheet(tableName);
+  const expectedHeaders = requiredExpectedHeaders(tableName);
+  const headers = requireHeaders(sheet, tableName, expectedHeaders);
+  const rowObject = Object.assign({}, valuesByHeader);
+  rowObject[idHeader] = idValue;
+
+  const row = headers.map(function(header) {
+    return rowObject[header] === undefined ? '' : rowObject[header];
+  });
+  sheet.appendRow(row);
+  return Object.assign({ id: idValue }, rowObject);
 }
 
 function updateById(tableName, idHeader, idValue, updatesByHeader) {

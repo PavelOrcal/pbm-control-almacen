@@ -1,4 +1,4 @@
-import type { HistorialServicio, MovimientoBodega, MovimientoProducto, Servicio } from '../types/pbm';
+import type { HistorialServicio, IngresoFacturaProducto, MovimientoBodega, MovimientoProducto, Servicio } from '../types/pbm';
 import { getServiceStatus, parseSheetDate } from './formatters';
 
 export function isDeletedRecord(record: { eliminado?: string | null | undefined }): boolean {
@@ -19,6 +19,10 @@ export function activeHistorialServicios(servicios: HistorialServicio[]): Histor
 
 export function activeMovimientosBodega(movimientos: MovimientoBodega[]): MovimientoBodega[] {
   return movimientos.filter((movimiento) => !isDeletedRecord(movimiento));
+}
+
+export function activeIngresosFacturaProducto(ingresos: IngresoFacturaProducto[]): IngresoFacturaProducto[] {
+  return ingresos.filter((ingreso) => !isDeletedRecord(ingreso));
 }
 
 export function visibleServiciosList(servicios: Servicio[]): Servicio[] {

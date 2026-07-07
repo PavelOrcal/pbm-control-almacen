@@ -4,6 +4,7 @@ import {
   appendMovimientoProducto,
   createServicio,
   fetchPbmData,
+  isAppsScriptJsonpTimeoutError,
   markHistorialServicioDeleted,
   markMovimientoBodegaDeleted,
   markMovimientoProductoDeleted,
@@ -29,6 +30,14 @@ export interface OfflineAwareMutationResult {
   message: string;
 }
 
+interface MovementMutationOptions {
+  onVerifyTimeout?: () => void;
+}
+
+export interface MovementMutationResult {
+  verifiedAfterTimeout: boolean;
+}
+
 function onlineMutationResult(message = 'Accion sincronizada con Google Sheet.'): OfflineAwareMutationResult {
   return { queued: false, message };
 }
@@ -48,6 +57,112 @@ function shouldQueueAfterFailure(error: unknown): boolean {
 function currentUserLabel(): string {
   const user = getCurrentUser();
   return user ? `${user.username} / ${user.role}` : 'Sin sesion';
+}
+
+function wait(ms: number): Promise<void> {
+  return new Promise((resolve) => window.setTimeout(resolve, ms));
+}
+
+function sameText(left: unknown, right: unknown): boolean {
+  return String(left ?? '').trim() === String(right ?? '').trim();
+}
+
+function sameNumber(left: unknown, right: unknown): boolean {
+  return Math.abs(Number(left ?? 0) - Number(right ?? 0)) < 0.000001;
+}
+
+function countMatchingMovimientoProducto(data: PbmData | undefined, input: MovimientoProductoInput): number {
+  if (!data) return 0;
+  return data.movimientosProducto.filter((movimiento) =>
+    sameText(movimiento.fecha, input.fecha) &&
+    sameText(movimiento.tipoMovimiento, input.tipoMovimiento) &&
+    sameText(movimiento.idProducto, input.idProducto) &&
+    sameNumber(movimiento.litros, input.litros) &&
+    sameText(movimiento.idCliente, input.idCliente) &&
+    sameText(movimiento.idMaquina, input.idMaquina) &&
+    sameText(movimiento.idServicio, input.idServicio) &&
+    sameText(movimiento.motivo, input.motivo) &&
+    sameText(movimiento.responsable, input.responsable)
+  ).length;
+}
+
+function countMatchingMovimientoBodega(data: PbmData | undefined, input: MovimientoBodegaInput): number {
+  if (!data) return 0;
+  return data.movimientosBodega.filter((movimiento) =>
+    sameText(movimiento.fecha, input.fecha) &&
+    sameText(movimiento.tipoMovimiento, input.tipoMovimiento) &&
+    sameText(movimiento.idArticulo, input.idArticulo) &&
+    sameNumber(movimiento.cantidad, input.cantidad) &&
+    sameText(movimiento.responsable, input.responsable) &&
+    sameText(movimiento.motivo, input.motivo)
+  ).length;
+}
+
+async function refetchDataAfterWriteTimeout(
+  queryClient: QueryClient,
+  onVerifyTimeout?: () => void
+): Promise<PbmData> {
+  onVerifyTimeout?.();
+  await wait(2500);
+  const latestData = await fetchPbmData();
+  queryClient.setQueryData(PBM_DATA_QUERY_KEY, latestData);
+  return latestData;
+}
+
+async function runMovimientoProductoWithTimeoutVerification(
+  queryClient: QueryClient,
+  input: MovimientoProductoInput,
+  options: MovementMutationOptions = {}
+): Promise<MovementMutationResult> {
+  const previousData = queryClient.getQueryData<PbmData>(PBM_DATA_QUERY_KEY);
+  const previousCount = countMatchingMovimientoProducto(previousData, input);
+
+  try {
+    await appendMovimientoProducto(input);
+    return { verifiedAfterTimeout: false };
+  } catch (error) {
+    if (!isAppsScriptJsonpTimeoutError(error)) throw error;
+
+    try {
+      const latestData = await refetchDataAfterWriteTimeout(queryClient, options.onVerifyTimeout);
+      if (countMatchingMovimientoProducto(latestData, input) > previousCount) {
+        return { verifiedAfterTimeout: true };
+      }
+    } catch (verificationError) {
+      const message = verificationError instanceof Error ? verificationError.message : String(verificationError);
+      throw new Error(`Apps Script tardo demasiado y no se pudo verificar el registro. Detalle: ${message}`);
+    }
+
+    throw new Error('Apps Script tardo demasiado y el movimiento no aparecio despues de verificar. Revisa Historial antes de intentar registrarlo de nuevo.');
+  }
+}
+
+async function runMovimientoBodegaWithTimeoutVerification(
+  queryClient: QueryClient,
+  input: MovimientoBodegaInput,
+  options: MovementMutationOptions = {}
+): Promise<MovementMutationResult> {
+  const previousData = queryClient.getQueryData<PbmData>(PBM_DATA_QUERY_KEY);
+  const previousCount = countMatchingMovimientoBodega(previousData, input);
+
+  try {
+    await appendMovimientoBodega(input);
+    return { verifiedAfterTimeout: false };
+  } catch (error) {
+    if (!isAppsScriptJsonpTimeoutError(error)) throw error;
+
+    try {
+      const latestData = await refetchDataAfterWriteTimeout(queryClient, options.onVerifyTimeout);
+      if (countMatchingMovimientoBodega(latestData, input) > previousCount) {
+        return { verifiedAfterTimeout: true };
+      }
+    } catch (verificationError) {
+      const message = verificationError instanceof Error ? verificationError.message : String(verificationError);
+      throw new Error(`Apps Script tardo demasiado y no se pudo verificar el registro. Detalle: ${message}`);
+    }
+
+    throw new Error('Apps Script tardo demasiado y el movimiento no aparecio despues de verificar. Revisa Historial antes de intentar registrarlo de nuevo.');
+  }
 }
 
 async function queueOfflineAction(
@@ -105,19 +220,23 @@ export function usePbmData() {
   });
 }
 
-export function useMovimientoProductoMutation() {
+export function useMovimientoProductoMutation(options: MovementMutationOptions = {}) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (input: MovimientoProductoInput) => appendMovimientoProducto(input),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: PBM_DATA_QUERY_KEY })
+    mutationFn: (input: MovimientoProductoInput) => runMovimientoProductoWithTimeoutVerification(queryClient, input, options),
+    onSuccess: (result) => {
+      if (!result.verifiedAfterTimeout) void queryClient.invalidateQueries({ queryKey: PBM_DATA_QUERY_KEY });
+    }
   });
 }
 
-export function useMovimientoBodegaMutation() {
+export function useMovimientoBodegaMutation(options: MovementMutationOptions = {}) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (input: MovimientoBodegaInput) => appendMovimientoBodega(input),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: PBM_DATA_QUERY_KEY })
+    mutationFn: (input: MovimientoBodegaInput) => runMovimientoBodegaWithTimeoutVerification(queryClient, input, options),
+    onSuccess: (result) => {
+      if (!result.verifiedAfterTimeout) void queryClient.invalidateQueries({ queryKey: PBM_DATA_QUERY_KEY });
+    }
   });
 }
 

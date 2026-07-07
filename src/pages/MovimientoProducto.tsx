@@ -1,4 +1,4 @@
-import { FormEvent, useMemo, useState } from 'react';
+import { FormEvent, useMemo, useRef, useState } from 'react';
 import { Field, inputClassName, PrimaryButton } from '../components/FormControls';
 import { ErrorState, LoadingState } from '../components/States';
 import { useMovimientoProductoMutation, usePbmData } from '../hooks/usePbmData';
@@ -8,7 +8,9 @@ import type { TipoMovimiento } from '../types/pbm';
 
 export default function MovimientoProducto() {
   const { data, isLoading, error } = usePbmData();
-  const mutation = useMovimientoProductoMutation();
+  const [submitStage, setSubmitStage] = useState<'idle' | 'registrando' | 'verificando'>('idle');
+  const submitLockRef = useRef(false);
+  const mutation = useMovimientoProductoMutation({ onVerifyTimeout: () => setSubmitStage('verificando') });
   const [fecha, setFecha] = useState(todayInputValue());
   const [tipoMovimiento, setTipoMovimiento] = useState<TipoMovimiento>('Entrada');
   const [idProducto, setIdProducto] = useState('');
@@ -36,19 +38,32 @@ export default function MovimientoProducto() {
   if (isLoading) return <LoadingState />;
   if (error || !data) return <ErrorState message={error instanceof Error ? error.message : 'Error desconocido'} />;
 
-  function onSubmit(event: FormEvent<HTMLFormElement>) {
+  const isSubmitting = mutation.isPending || submitStage !== 'idle';
+  const submitLabel = submitStage === 'verificando' ? 'Verificando registro...' : isSubmitting ? 'Registrando...' : 'Registrar movimiento';
+
+  async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    mutation.mutate({
-      fecha,
-      tipoMovimiento,
-      idProducto,
-      litros: Number(litros),
-      idCliente,
-      idMaquina,
-      idServicio,
-      motivo,
-      responsable
-    });
+    if (submitLockRef.current || isSubmitting) return;
+    submitLockRef.current = true;
+    setSubmitStage('registrando');
+    try {
+      await mutation.mutateAsync({
+        fecha,
+        tipoMovimiento,
+        idProducto,
+        litros: Number(litros),
+        idCliente,
+        idMaquina,
+        idServicio,
+        motivo,
+        responsable
+      });
+    } catch {
+      // React Query keeps the visible error state; this prevents an unhandled promise rejection.
+    } finally {
+      submitLockRef.current = false;
+      setSubmitStage('idle');
+    }
   }
 
   return (
@@ -154,10 +169,14 @@ export default function MovimientoProducto() {
         </select>
       </Field>
 
-      <PrimaryButton type="submit" disabled={mutation.isPending}>
-        {mutation.isPending ? 'Guardando...' : 'Registrar movimiento'}
+      <PrimaryButton type="submit" disabled={isSubmitting}>
+        {submitLabel}
       </PrimaryButton>
-      {mutation.isSuccess ? <p className="success-panel animate-card-in rounded-lg p-3 text-sm font-bold text-pbm-green">Movimiento registrado.</p> : null}
+      {mutation.isSuccess ? (
+        <p className="success-panel animate-card-in rounded-lg p-3 text-sm font-bold text-pbm-green">
+          {mutation.data?.verifiedAfterTimeout ? 'Movimiento confirmado en Google Sheet despues de verificar.' : 'Movimiento registrado.'}
+        </p>
+      ) : null}
       {mutation.isError ? <p className="error-panel animate-card-in rounded-lg p-3 text-sm font-bold text-pbm-red">{mutation.error.message}</p> : null}
     </form>
   );

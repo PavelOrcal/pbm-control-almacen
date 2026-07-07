@@ -19,7 +19,9 @@ import type {
 import { activeHistorialServicios, activeMovimientosBodega, activeMovimientosProducto, activeServicios } from './records';
 
 const API_URL = import.meta.env.VITE_API_URL?.trim();
-const JSONP_TIMEOUT_MS = 20000;
+const APPS_SCRIPT_JSONP_TIMEOUT_DETAIL = 'Tiempo de espera agotado usando JSONP con Apps Script';
+const JSONP_READ_TIMEOUT_MS = 20000;
+const JSONP_WRITE_TIMEOUT_MS = 75000;
 
 export interface PushTokenInput {
   usuario: string;
@@ -252,6 +254,11 @@ function apiErrorMessage(detail: string, url: string): string {
   ].join('\n');
 }
 
+export function isAppsScriptJsonpTimeoutError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  return message.includes(APPS_SCRIPT_JSONP_TIMEOUT_DETAIL);
+}
+
 async function requestJson<T>(url: string, options?: RequestInit, logErrors = true): Promise<T> {
   const method = options?.method ?? 'GET';
   let response: Response;
@@ -307,7 +314,7 @@ function appendParams(url: string, params: Record<string, string>): string {
   return nextUrl.toString();
 }
 
-function requestJsonp<T>(action = 'all', payload?: Record<string, unknown>): Promise<T> {
+function requestJsonp<T>(action = 'all', payload?: Record<string, unknown>, options: { timeoutMs?: number } = {}): Promise<T> {
   if (!API_URL) return Promise.reject(new Error('API_URL is not configured'));
 
   return new Promise((resolve, reject) => {
@@ -316,8 +323,8 @@ function requestJsonp<T>(action = 'all', payload?: Record<string, unknown>): Pro
     const script = document.createElement('script');
     const timeoutId = window.setTimeout(() => {
       cleanup();
-      reject(new Error(apiErrorMessage('Tiempo de espera agotado usando JSONP con Apps Script', API_URL)));
-    }, JSONP_TIMEOUT_MS);
+      reject(new Error(apiErrorMessage(APPS_SCRIPT_JSONP_TIMEOUT_DETAIL, API_URL)));
+    }, options.timeoutMs ?? JSONP_READ_TIMEOUT_MS);
 
     function cleanup() {
       window.clearTimeout(timeoutId);
@@ -399,11 +406,15 @@ function containsServicePhotos(payload: Record<string, unknown>): boolean {
   return Boolean(photos && Object.values(photos).some(Boolean));
 }
 
-async function postAction(action: string, payload: Record<string, unknown>, options: { forcePost?: boolean } = {}): Promise<unknown> {
+async function postAction(
+  action: string,
+  payload: Record<string, unknown>,
+  options: { forcePost?: boolean; jsonpTimeoutMs?: number } = {}
+): Promise<unknown> {
   if (!API_URL) return { ok: true, mock: true };
 
   if (supportsJsonp() && !options.forcePost) {
-    return requestJsonp<unknown>(action, payload);
+    return requestJsonp<unknown>(action, payload, { timeoutMs: options.jsonpTimeoutMs ?? JSONP_WRITE_TIMEOUT_MS });
   }
 
   return requestJson<unknown>(API_URL, {

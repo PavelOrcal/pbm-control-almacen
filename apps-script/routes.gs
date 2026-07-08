@@ -110,15 +110,20 @@ function handleMutation(body) {
     const result = getPushStatus();
     return { ok: true, data: result };
   }
+  if (body.action === 'auditServiciosDuplicados') {
+    const result = auditServiciosDuplicados();
+    return { ok: true, data: result };
+  }
   return { ok: false, error: 'Unknown action: ' + body.action };
 }
 
 function appendMovimientoProducto(row) {
+  const litros = requirePositiveInteger(row.litros !== undefined ? row.litros : row['Litros'], 'Litros', true);
   const values = {
     'Fecha': row.fecha,
     'Tipo Movimiento': row.tipoMovimiento,
     'ID Producto': row.idProducto,
-    'Litros': row.litros,
+    'Litros': litros,
     'ID Cliente': row.idCliente || '',
     'ID Maquina': row.idMaquina || '',
     'ID Servicio': row.idServicio || '',
@@ -130,11 +135,12 @@ function appendMovimientoProducto(row) {
 }
 
 function appendMovimientoBodega(row) {
+  const cantidad = requirePositiveInteger(row.cantidad !== undefined ? row.cantidad : row['Cantidad'], 'Cantidad', true);
   const values = {
     'Fecha': row.fecha,
     'Tipo Movimiento': row.tipoMovimiento,
     'ID Articulo': row.idArticulo,
-    'Cantidad': row.cantidad,
+    'Cantidad': cantidad,
     'Responsable': row.responsable,
     'Motivo': row.motivo,
     'Eliminado': 'NO'
@@ -239,7 +245,25 @@ function markIngresoFacturaProductoDeleted(idIngresoFactura) {
   return { idIngresoFactura: idIngresoFactura, eliminado: 'SI' };
 }
 
+function findActiveServicioByMaquina(idMaquina) {
+  const machineId = normalizedText(idMaquina);
+  if (!machineId || machineId.toUpperCase() === 'N/A') return null;
+  const rows = readTable('Servicios');
+  return rows.find(function(row) {
+    return normalizedText(row['ID Maquina']) === machineId &&
+      normalizedText(row['Eliminado']).toUpperCase() !== 'SI';
+  }) || null;
+}
+
+function optionalPositiveInteger(value, label) {
+  const text = normalizedText(value);
+  if (!text) return '';
+  return requirePositiveInteger(text, label, false);
+}
+
 function createServicio(row) {
+  const litrosEstimados = optionalPositiveInteger(row.litrosEstimados, 'Litros Estimados');
+  const litrosUsados = optionalPositiveInteger(row.litrosUsados, 'Litros Usados');
   const values = {
     'Fecha Programada': row.fechaProgramada,
     'ID Cliente': row.idCliente,
@@ -249,14 +273,33 @@ function createServicio(row) {
     'Tipo Servicio': row.tipoServicio || 'Servicio maquina',
     'ID Producto': row.idProducto,
     'Producto': row.producto,
-    'Litros Estimados': row.litrosEstimados,
-    'Litros Usados': row.litrosUsados || '',
+    'Litros Estimados': litrosEstimados,
+    'Litros Usados': litrosUsados,
     'Producto Usado': row.productoUsado || '',
     'Responsable': row.responsable,
     'Observaciones Servicio': row.observacionesServicio || '',
     'Fecha Realizado': row.fechaRealizado || '',
     'Eliminado': row.eliminado || 'NO'
   };
+
+  const existing = findActiveServicioByMaquina(row.idMaquina);
+  if (existing) {
+    const updates = {
+      'Fecha Programada': values['Fecha Programada'],
+      'ID Producto': values['ID Producto'],
+      'Producto': values['Producto'],
+      'Litros Estimados': values['Litros Estimados'],
+      'Litros Usados': values['Litros Usados'],
+      'Producto Usado': values['Producto Usado'],
+      'Responsable': values['Responsable'],
+      'Observaciones Servicio': values['Observaciones Servicio'],
+      'Fecha Realizado': values['Fecha Realizado'],
+      'Eliminado': values['Eliminado']
+    };
+    updateById('Servicios', 'ID Servicio', existing['ID Servicio'], updates);
+    return Object.assign({ id: existing['ID Servicio'], idServicio: existing['ID Servicio'], reusedExisting: true }, updates);
+  }
+
   return appendWithGeneratedId('Servicios', 'ID Servicio', 'SER', values);
 }
 
@@ -264,7 +307,13 @@ function normalizedText(value) {
   return String(value === null || value === undefined ? '' : value).trim();
 }
 
+function normalizedLitrosUsadosValue(value) {
+  if (value === null || value === undefined || normalizedText(value) === '') return '';
+  return requirePositiveInteger(value, 'Litros Usados', true);
+}
+
 function findExistingHistorialRealizado(body, servicio) {
+  const litrosUsados = normalizedLitrosUsadosValue(body.litrosUsados);
   const rows = readTable('Historial Servicios');
   return rows.find(function(row) {
     return normalizedText(row['Eliminado']).toUpperCase() !== 'SI' &&
@@ -272,7 +321,7 @@ function findExistingHistorialRealizado(body, servicio) {
       normalizedText(row['Fecha Realizado']) === normalizedText(body.fechaRealizado) &&
       normalizedText(row['Observaciones Servicio']) === normalizedText(body.observacionesServicio || servicio['Observaciones Servicio']) &&
       normalizedText(row['Producto Usado']) === normalizedText(body.productoUsado || servicio['Producto Usado'] || servicio['Producto']) &&
-      normalizedText(row['Litros Usados']) === normalizedText(body.litrosUsados === null || body.litrosUsados === undefined ? '' : body.litrosUsados) &&
+      normalizedText(row['Litros Usados']) === normalizedText(litrosUsados) &&
       normalizedText(row['Responsable']) === normalizedText(body.responsable || servicio['Responsable']);
   });
 }
@@ -291,6 +340,7 @@ function markServicioRealizado(body) {
   const fechaRealizado = body.fechaRealizado;
   if (!idServicio) throw new Error('idServicio is required');
   if (!fechaRealizado) throw new Error('fechaRealizado is required');
+  const litrosUsados = normalizedLitrosUsadosValue(body.litrosUsados);
 
   const servicio = findById('Servicios', 'ID Servicio', idServicio);
   const existingHistorial = findExistingHistorialRealizado(body, servicio);
@@ -343,7 +393,7 @@ function markServicioRealizado(body) {
     'Tipo Servicio': servicio['Tipo Servicio'] || 'Servicio maquina',
     'ID Producto': servicio['ID Producto'],
     'Producto Usado': body.productoUsado || servicio['Producto Usado'] || servicio['Producto'],
-    'Litros Usados': body.litrosUsados === null || body.litrosUsados === undefined ? '' : body.litrosUsados,
+    'Litros Usados': litrosUsados,
     'Responsable': body.responsable || servicio['Responsable'],
     'Observaciones Servicio': body.observacionesServicio || servicio['Observaciones Servicio'],
     'Fotos Servicio': '',
@@ -379,7 +429,7 @@ function updateServicio(body) {
   if (body.observacionesServicio !== undefined) updates['Observaciones Servicio'] = body.observacionesServicio;
   if (body.fechaRealizado !== undefined) updates['Fecha Realizado'] = body.fechaRealizado;
   if (body.responsable !== undefined) updates['Responsable'] = body.responsable;
-  if (body.litrosUsados !== undefined) updates['Litros Usados'] = body.litrosUsados;
+  if (body.litrosUsados !== undefined) updates['Litros Usados'] = normalizedLitrosUsadosValue(body.litrosUsados);
   if (body.productoUsado !== undefined) updates['Producto Usado'] = body.productoUsado;
   if (body.eliminado !== undefined) updates['Eliminado'] = body.eliminado;
   if (Object.keys(updates).length === 0) throw new Error('No service fields to update');
@@ -410,6 +460,34 @@ function markHistorialServicioDeleted(idHistorialServicio) {
     'Eliminado': 'SI'
   });
   return { idHistorialServicio: idHistorialServicio, eliminado: 'SI' };
+}
+
+function auditServiciosDuplicados() {
+  const groups = {};
+  readTable('Servicios').forEach(function(row) {
+    if (normalizedText(row['Eliminado']).toUpperCase() === 'SI') return;
+    const idMaquina = normalizedText(row['ID Maquina']);
+    if (!idMaquina || idMaquina.toUpperCase() === 'N/A') return;
+    if (!groups[idMaquina]) groups[idMaquina] = [];
+    groups[idMaquina].push(row);
+  });
+
+  const duplicates = [];
+  Object.keys(groups).forEach(function(idMaquina) {
+    if (groups[idMaquina].length <= 1) return;
+    const ids = groups[idMaquina].map(function(row) {
+      return row['ID Servicio'] + ' (' + (row['Fecha Programada'] || 'Sin fecha') + ')';
+    });
+    Logger.log('Duplicados Servicios / ID Maquina ' + idMaquina + ': ' + ids.join(', '));
+    duplicates.push({
+      idMaquina: idMaquina,
+      total: groups[idMaquina].length,
+      servicios: ids
+    });
+  });
+
+  Logger.log('Auditoria de servicios duplicados terminada. Grupos duplicados: ' + duplicates.length);
+  return duplicates;
 }
 
 function pushTimestamp() {

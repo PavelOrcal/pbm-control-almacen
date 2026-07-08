@@ -570,6 +570,33 @@ function resetServicioActivo(servicio: Servicio): Servicio {
 
 export async function createServicio(input: ServicioCreateInput): Promise<void> {
   if (!API_URL) {
+    const existingServicio = input.idMaquina
+      ? mockStore.servicios.find(
+        (item) => item.idMaquina === input.idMaquina && String(item.eliminado ?? '').trim().toUpperCase() !== 'SI'
+      )
+      : undefined;
+
+    if (existingServicio) {
+      mockStore.servicios = mockStore.servicios.map((item) =>
+        item.idServicio === existingServicio.idServicio
+          ? {
+            ...item,
+            fechaProgramada: input.fechaProgramada,
+            idProducto: input.idProducto,
+            producto: input.producto,
+            litrosEstimados: input.litrosEstimados,
+            litrosUsados: input.litrosUsados ?? null,
+            productoUsado: input.productoUsado ?? '',
+            responsable: input.responsable,
+            observacionesServicio: input.observacionesServicio ?? '',
+            fechaRealizado: input.fechaRealizado ?? '',
+            eliminado: input.eliminado ?? 'NO'
+          }
+          : item
+      );
+      return;
+    }
+
     const idServicio = nextId(
       mockStore.servicios.map((item) => item.idServicio),
       'SER'

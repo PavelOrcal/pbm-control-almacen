@@ -4,6 +4,7 @@ import { ErrorState, LoadingState } from '../components/States';
 import { useMovimientoProductoMutation, usePbmData } from '../hooks/usePbmData';
 import { SHEET_VALIDATIONS } from '../lib/sheetSchema';
 import { todayInputValue } from '../lib/formatters';
+import { canEditPositiveIntegerInput, parsePositiveIntegerInput, POSITIVE_INTEGER_ERROR } from '../lib/positiveInteger';
 import type { TipoMovimiento } from '../types/pbm';
 
 export default function MovimientoProducto() {
@@ -20,6 +21,7 @@ export default function MovimientoProducto() {
   const [idServicio, setIdServicio] = useState('');
   const [motivo, setMotivo] = useState('');
   const [responsable, setResponsable] = useState('Anibal');
+  const [formError, setFormError] = useState('');
 
   const maquinas = useMemo(() => {
     if (!data) return [];
@@ -44,21 +46,25 @@ export default function MovimientoProducto() {
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (submitLockRef.current || isSubmitting) return;
-    submitLockRef.current = true;
-    setSubmitStage('registrando');
     try {
+      const parsedLitros = parsePositiveIntegerInput(litros, 'Litros');
+      if (parsedLitros === null) throw new Error(`Litros: ${POSITIVE_INTEGER_ERROR}`);
+      submitLockRef.current = true;
+      setSubmitStage('registrando');
+      setFormError('');
       await mutation.mutateAsync({
         fecha,
         tipoMovimiento,
         idProducto,
-        litros: Number(litros),
+        litros: parsedLitros,
         idCliente,
         idMaquina,
         idServicio,
         motivo,
         responsable
       });
-    } catch {
+    } catch (submitError) {
+      if (submitError instanceof Error) setFormError(submitError.message);
       // React Query keeps the visible error state; this prevents an unhandled promise rejection.
     } finally {
       submitLockRef.current = false;
@@ -99,12 +105,21 @@ export default function MovimientoProducto() {
 
       <Field label="Litros">
         <input
-          type="number"
-          min="0.01"
-          step="0.01"
+          type="text"
+          inputMode="numeric"
+          pattern="[0-9]*"
           value={litros}
-          onChange={(event) => setLitros(event.target.value)}
+          onChange={(event) => {
+            const nextValue = event.target.value;
+            if (!canEditPositiveIntegerInput(nextValue)) {
+              setFormError(POSITIVE_INTEGER_ERROR);
+              return;
+            }
+            setLitros(nextValue);
+            setFormError('');
+          }}
           className={inputClassName}
+          placeholder="Ej. 100"
           required
         />
       </Field>
@@ -172,6 +187,7 @@ export default function MovimientoProducto() {
       <PrimaryButton type="submit" disabled={isSubmitting}>
         {submitLabel}
       </PrimaryButton>
+      {formError ? <p className="error-panel animate-card-in rounded-lg p-3 text-sm font-bold text-pbm-red">{formError}</p> : null}
       {mutation.isSuccess ? (
         <p className="success-panel animate-card-in rounded-lg p-3 text-sm font-bold text-pbm-green">
           {mutation.data?.verifiedAfterTimeout ? 'Movimiento confirmado en Google Sheet despues de verificar.' : 'Movimiento registrado.'}

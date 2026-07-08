@@ -9,6 +9,7 @@ import { ServiceStatusBadge, StatusBadge } from '../components/StatusBadge';
 import { usePbmData, useServicioDeleteMutation, useServicioRealizadoMutation, useServicioUpdateMutation } from '../hooks/usePbmData';
 import { canSeeInventory, useAuth } from '../lib/auth';
 import { formatDate, getServiceStatus, parseSheetDate, todayInputValue, toDateInputValue } from '../lib/formatters';
+import { canEditPositiveIntegerInput, parsePositiveIntegerInput, POSITIVE_INTEGER_ERROR } from '../lib/positiveInteger';
 import { isDeletedRecord } from '../lib/records';
 import { cancelServiceReminders, scheduleServiceReminders } from '../lib/reminders';
 import { deleteServicePhotoDraft, loadServicePhotoDraft, saveServicePhotoDraft, type ServicePhotoDraftMap } from '../lib/servicePhotos';
@@ -32,13 +33,6 @@ function serviceAccent(status: ServiceStatus): 'green' | 'yellow' | 'blue' {
 
 function isIndefinite(productoUsado: string): boolean {
   return productoUsado === 'Indefinido / No aplica';
-}
-
-function parsePositiveInteger(value: string): number | null {
-  const clean = value.trim();
-  if (!clean) return null;
-  if (!/^[1-9]\d*$/.test(clean)) return null;
-  return Number(clean);
 }
 
 function inputValueFromDate(date: Date): string {
@@ -150,9 +144,11 @@ export default function ServicioDetalle() {
 
   function saveDraft(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const litros = parsePositiveInteger(litrosUsados);
-    if (litrosUsados.trim() && litros === null) {
-      setCloseError('Ingresa litros en números enteros.');
+    let litros: number | null = null;
+    try {
+      litros = parsePositiveIntegerInput(litrosUsados, 'Litros usados', false);
+    } catch (validationError) {
+      setCloseError(validationError instanceof Error ? validationError.message : POSITIVE_INTEGER_ERROR);
       return;
     }
     draftMutation.mutate(
@@ -176,7 +172,13 @@ export default function ServicioDetalle() {
   function markAsDone() {
     const cleanObservaciones = observacionesServicio.trim();
     const cleanProducto = productoUsado.trim();
-    const litros = parsePositiveInteger(litrosUsados);
+    let litros: number | null = null;
+    try {
+      litros = parsePositiveIntegerInput(litrosUsados, 'Litros usados', false);
+    } catch (validationError) {
+      setCloseError(validationError instanceof Error ? validationError.message : POSITIVE_INTEGER_ERROR);
+      return;
+    }
 
     if (!fechaProgramada) {
       setCloseError('Captura Fecha Programada antes de marcar el servicio como realizado.');
@@ -191,7 +193,7 @@ export default function ServicioDetalle() {
       return;
     }
     if (!isIndefinite(cleanProducto) && litros === null) {
-      setCloseError('Ingresa litros en números enteros.');
+      setCloseError(`Litros usados: ${POSITIVE_INTEGER_ERROR}`);
       return;
     }
     if (!responsable) {
@@ -322,16 +324,14 @@ export default function ServicioDetalle() {
           <div className="grid grid-cols-2 gap-3">
             <Field label="Litros usados">
               <input
-                type="number"
-                min="0"
-                step="1"
+                type="text"
                 inputMode="numeric"
                 pattern="[0-9]*"
                 value={litrosUsados}
                 onChange={(event) => {
                   const nextValue = event.target.value;
-                  if (nextValue && !/^\d+$/.test(nextValue)) {
-                    setCloseError('Ingresa litros en números enteros.');
+                  if (!canEditPositiveIntegerInput(nextValue)) {
+                    setCloseError(POSITIVE_INTEGER_ERROR);
                     return;
                   }
                   setLitrosUsados(nextValue);

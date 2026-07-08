@@ -10,6 +10,7 @@ import {
   LockKeyhole,
   PackageSearch,
   PackagePlus,
+  ReceiptText,
   Warehouse,
   UsersRound,
 } from 'lucide-react';
@@ -98,6 +99,13 @@ export default function Dashboard() {
       tone: 'green'
     },
     {
+      to: '/ingreso-factura-producto',
+      label: 'Ingreso factura producto',
+      detail: 'Facturas, comprobantes y litros informativos',
+      icon: ReceiptText,
+      tone: 'blue'
+    },
+    {
       to: '/servicios',
       label: 'Ver servicios',
       detail: 'Lista, calendario y estados',
@@ -132,7 +140,7 @@ export default function Dashboard() {
     yellow: 'border-pbm-yellow/30 bg-pbm-yellow/10 text-pbm-yellow',
     orange: 'border-pbm-orange/35 bg-pbm-orange/10 text-pbm-orange shadow-orange'
   } as const;
-  const protectedRoutes = new Set(['/movimiento-producto', '/movimiento-bodega', '/stock-productos', '/stock-bodega']);
+  const protectedRoutes = new Set(['/movimiento-producto', '/movimiento-bodega', '/stock-productos', '/stock-bodega', '/ingreso-factura-producto']);
   const visibleAccesses = inventoryUnlocked ? accesosOperativos : accesosOperativos.filter((acceso) => !protectedRoutes.has(acceso.to));
 
   return (

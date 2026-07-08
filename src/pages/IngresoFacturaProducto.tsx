@@ -5,6 +5,7 @@ import { ErrorState, LoadingState } from '../components/States';
 import { StatusBadge } from '../components/StatusBadge';
 import { useIngresoFacturaProductoDeleteMutation, useIngresoFacturaProductoMutation, usePbmData } from '../hooks/usePbmData';
 import { formatDate, parseSheetDate, todayInputValue } from '../lib/formatters';
+import { canEditPositiveIntegerInput, parsePositiveIntegerInput, POSITIVE_INTEGER_ERROR } from '../lib/positiveInteger';
 import { SHEET_VALIDATIONS } from '../lib/sheetSchema';
 import type { Cliente, IngresoFacturaProducto, PdfUploadPayload } from '../types/pbm';
 
@@ -25,18 +26,6 @@ interface ClientSummary {
 
 function isCapstone(cliente: Cliente | null): boolean {
   return /CAPSTONE\s+COO?PER/i.test(cliente?.empresa ?? '');
-}
-
-function parsePositiveInteger(value: string, label: string, required: boolean): number {
-  const text = value.trim();
-  if (!text) {
-    if (required) throw new Error(`${label} es obligatorio.`);
-    return 0;
-  }
-  if (!/^[1-9]\d*$/.test(text)) {
-    throw new Error(`${label} debe ser un numero entero positivo, sin decimales ni signos.`);
-  }
-  return Number(text);
 }
 
 function isPdfFile(file: File): boolean {
@@ -206,8 +195,9 @@ export default function IngresoFacturaProducto() {
 
     try {
       if (!selectedCliente) throw new Error('Selecciona un cliente.');
-      const entrada = parsePositiveInteger(litrosEntrada, 'Litros entrada', true);
-      const salidaManual = parsePositiveInteger(litrosSalidaManual, 'Litros salida manual', false);
+      const entrada = parsePositiveIntegerInput(litrosEntrada, 'Litros entrada', true);
+      if (entrada === null) throw new Error(`Litros entrada: ${POSITIVE_INTEGER_ERROR}`);
+      const salidaManual = parsePositiveIntegerInput(litrosSalidaManual, 'Litros salida manual', false) ?? 0;
       if (!facturaPdf) throw new Error('Sube el PDF de factura.');
 
       submitLockRef.current = true;
@@ -296,7 +286,15 @@ export default function IngresoFacturaProducto() {
             <Field label="Litros entrada">
               <input
                 value={litrosEntrada}
-                onChange={(event) => setLitrosEntrada(event.target.value)}
+                onChange={(event) => {
+                  const nextValue = event.target.value;
+                  if (!canEditPositiveIntegerInput(nextValue)) {
+                    setFormError(POSITIVE_INTEGER_ERROR);
+                    return;
+                  }
+                  setLitrosEntrada(nextValue);
+                  setFormError('');
+                }}
                 className={inputClassName}
                 inputMode="numeric"
                 pattern="[0-9]*"
@@ -308,7 +306,15 @@ export default function IngresoFacturaProducto() {
             <Field label="Litros salida manual" hint="Opcional. Si capturas un valor debe ser entero positivo.">
               <input
                 value={litrosSalidaManual}
-                onChange={(event) => setLitrosSalidaManual(event.target.value)}
+                onChange={(event) => {
+                  const nextValue = event.target.value;
+                  if (!canEditPositiveIntegerInput(nextValue)) {
+                    setFormError(POSITIVE_INTEGER_ERROR);
+                    return;
+                  }
+                  setLitrosSalidaManual(nextValue);
+                  setFormError('');
+                }}
                 className={inputClassName}
                 inputMode="numeric"
                 pattern="[0-9]*"

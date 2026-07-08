@@ -3,6 +3,7 @@ import { Field, inputClassName, PrimaryButton } from '../components/FormControls
 import { ErrorState, LoadingState } from '../components/States';
 import { useMovimientoBodegaMutation, usePbmData } from '../hooks/usePbmData';
 import { todayInputValue } from '../lib/formatters';
+import { canEditPositiveIntegerInput, parsePositiveIntegerInput, POSITIVE_INTEGER_ERROR } from '../lib/positiveInteger';
 import { SHEET_VALIDATIONS } from '../lib/sheetSchema';
 import type { TipoMovimiento } from '../types/pbm';
 
@@ -17,6 +18,7 @@ export default function MovimientoBodega() {
   const [cantidad, setCantidad] = useState('');
   const [responsable, setResponsable] = useState('Anibal');
   const [motivo, setMotivo] = useState('');
+  const [formError, setFormError] = useState('');
 
   if (isLoading) return <LoadingState />;
   if (error || !data) return <ErrorState message={error instanceof Error ? error.message : 'Error desconocido'} />;
@@ -27,18 +29,22 @@ export default function MovimientoBodega() {
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (submitLockRef.current || isSubmitting) return;
-    submitLockRef.current = true;
-    setSubmitStage('registrando');
     try {
+      const parsedCantidad = parsePositiveIntegerInput(cantidad, 'Cantidad');
+      if (parsedCantidad === null) throw new Error(`Cantidad: ${POSITIVE_INTEGER_ERROR}`);
+      submitLockRef.current = true;
+      setSubmitStage('registrando');
+      setFormError('');
       await mutation.mutateAsync({
         fecha,
         tipoMovimiento,
         idArticulo,
-        cantidad: Number(cantidad),
+        cantidad: parsedCantidad,
         responsable,
         motivo
       });
-    } catch {
+    } catch (submitError) {
+      if (submitError instanceof Error) setFormError(submitError.message);
       // React Query keeps the visible error state; this prevents an unhandled promise rejection.
     } finally {
       submitLockRef.current = false;
@@ -79,12 +85,21 @@ export default function MovimientoBodega() {
 
       <Field label="Cantidad">
         <input
-          type="number"
-          min="0.01"
-          step="0.01"
+          type="text"
+          inputMode="numeric"
+          pattern="[0-9]*"
           value={cantidad}
-          onChange={(event) => setCantidad(event.target.value)}
+          onChange={(event) => {
+            const nextValue = event.target.value;
+            if (!canEditPositiveIntegerInput(nextValue)) {
+              setFormError(POSITIVE_INTEGER_ERROR);
+              return;
+            }
+            setCantidad(nextValue);
+            setFormError('');
+          }}
           className={inputClassName}
+          placeholder="Ej. 10"
           required
         />
       </Field>
@@ -104,6 +119,7 @@ export default function MovimientoBodega() {
       <PrimaryButton type="submit" disabled={isSubmitting}>
         {submitLabel}
       </PrimaryButton>
+      {formError ? <p className="error-panel animate-card-in rounded-lg p-3 text-sm font-bold text-pbm-red">{formError}</p> : null}
       {mutation.isSuccess ? (
         <p className="success-panel animate-card-in rounded-lg p-3 text-sm font-bold text-pbm-green">
           {mutation.data?.verifiedAfterTimeout
